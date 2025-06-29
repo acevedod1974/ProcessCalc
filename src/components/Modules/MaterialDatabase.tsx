@@ -1,40 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../../contexts/AppContext';
-import { InputField } from '../UI/InputField';
-import { ResultCard } from '../UI/ResultCard';
-import { 
-  Database, 
-  Search, 
-  Plus, 
-  Filter,
+import React, { useState, useEffect, useMemo } from "react";
+import { useApp } from "../../contexts/AppContext";
+import { InputField } from "../UI/InputField";
+import { ResultCard } from "../UI/ResultCard";
+import {
+  Database,
+  Search,
+  Plus,
   Download,
   BookOpen,
-  Thermometer,
-  Zap,
-  Settings,
   Eye,
   Edit,
-  Trash2
-} from 'lucide-react';
-import { MATERIALS } from '../../utils/calculations';
-import { CUTTING_MATERIALS } from '../../utils/cuttingCalculations';
-import { MACHINING_MATERIALS } from '../../utils/machiningCalculations';
+} from "lucide-react";
+import { MATERIALS } from "../../utils/calculations";
+import { CUTTING_MATERIALS } from "../../utils/cuttingCalculations";
+import { MACHINING_MATERIALS } from "../../utils/machiningCalculations";
+
+// Define a specific type for material properties
+interface MaterialProperties {
+  name: string;
+  density?: number;
+  yieldStrength?: number;
+  ultimateStrength?: number;
+  tensileStrength?: number;
+  shearStrength?: number;
+  hardness?: number;
+  youngsModulus?: number;
+  poissonRatio?: number;
+  flowStressCoefficient?: number;
+  strainHardeningExponent?: number;
+  workHardeningExponent?: number;
+  thermalConductivity?: number;
+  specificHeat?: number;
+  machinabilityRating?: number;
+  frictionCoefficient?: number;
+  recommendedSpeed?: {
+    hss?: number;
+    carbide?: number;
+    ceramic?: number;
+    diamond?: number;
+  };
+  // ...add more as needed
+}
 
 interface MaterialEntry {
   id: string;
   name: string;
-  category: 'forming' | 'cutting' | 'machining';
-  properties: Record<string, any>;
+  category: "forming" | "cutting" | "machining";
+  properties: MaterialProperties;
 }
 
 export function MaterialDatabase() {
   const { state } = useApp();
-  const isDark = state.theme.mode === 'dark';
+  const isDark = state.theme.mode === "dark";
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedMaterial, setSelectedMaterial] = useState<MaterialEntry | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedMaterial, setSelectedMaterial] =
+    useState<MaterialEntry | null>(null);
 
   // Combine all materials into a unified database
   const [materials, setMaterials] = useState<MaterialEntry[]>([]);
@@ -47,8 +69,8 @@ export function MaterialDatabase() {
       combinedMaterials.push({
         id: `forming-${key}`,
         name: material.name,
-        category: 'forming',
-        properties: material
+        category: "forming",
+        properties: material,
       });
     });
 
@@ -57,8 +79,8 @@ export function MaterialDatabase() {
       combinedMaterials.push({
         id: `cutting-${key}`,
         name: material.name,
-        category: 'cutting',
-        properties: material
+        category: "cutting",
+        properties: material,
       });
     });
 
@@ -67,36 +89,58 @@ export function MaterialDatabase() {
       combinedMaterials.push({
         id: `machining-${key}`,
         name: material.name,
-        category: 'machining',
-        properties: material
+        category: "machining",
+        properties: material,
       });
     });
 
     setMaterials(combinedMaterials);
   }, []);
 
-  // Filter materials based on search and category
-  const filteredMaterials = materials.filter(material => {
-    const matchesSearch = material.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || material.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Memoize filtered materials
+  const filteredMaterials = useMemo(
+    () =>
+      materials.filter((material) => {
+        const matchesSearch = material.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        const matchesCategory =
+          selectedCategory === "all" || material.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      }),
+    [materials, searchTerm, selectedCategory]
+  );
+
+  // Memoize statistics
+  const stats = useMemo(
+    () => ({
+      total: materials.length,
+      forming: materials.filter((m) => m.category === "forming").length,
+      cutting: materials.filter((m) => m.category === "cutting").length,
+      machining: materials.filter((m) => m.category === "machining").length,
+    }),
+    [materials]
+  );
 
   const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'forming', label: 'Forming Materials' },
-    { value: 'cutting', label: 'Cutting Materials' },
-    { value: 'machining', label: 'Machining Materials' }
+    { value: "all", label: "All Categories" },
+    { value: "forming", label: "Forming Materials" },
+    { value: "cutting", label: "Cutting Materials" },
+    { value: "machining", label: "Machining Materials" },
   ];
 
   const renderMaterialProperties = (material: MaterialEntry) => {
     const props = material.properties;
-    
+
     return (
       <div className="space-y-6">
         {/* Basic Properties */}
         <div>
-          <h4 className={`font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          <h4
+            className={`font-semibold mb-3 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
+          >
             Basic Properties
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -160,7 +204,11 @@ export function MaterialDatabase() {
         {/* Mechanical Properties */}
         {(props.youngsModulus || props.poissonRatio) && (
           <div>
-            <h4 className={`font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h4
+              className={`font-semibold mb-3 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Mechanical Properties
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -213,7 +261,11 @@ export function MaterialDatabase() {
         {/* Thermal Properties */}
         {(props.thermalConductivity || props.specificHeat) && (
           <div>
-            <h4 className={`font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h4
+              className={`font-semibold mb-3 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Thermal Properties
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -242,7 +294,11 @@ export function MaterialDatabase() {
         {/* Machining Properties */}
         {(props.machinabilityRating || props.recommendedSpeed) && (
           <div>
-            <h4 className={`font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h4
+              className={`font-semibold mb-3 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Machining Properties
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -264,10 +320,14 @@ export function MaterialDatabase() {
                 />
               )}
             </div>
-            
+
             {props.recommendedSpeed && (
               <div className="mt-4">
-                <h5 className={`font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                <h5
+                  className={`font-medium mb-2 ${
+                    isDark ? "text-slate-300" : "text-gray-700"
+                  }`}
+                >
                   Recommended Cutting Speeds
                 </h5>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -313,36 +373,49 @@ export function MaterialDatabase() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className={`p-3 rounded-lg ${isDark ? 'bg-purple-900' : 'bg-purple-100'}`}>
-            <Database className={`${isDark ? 'text-purple-300' : 'text-purple-600'}`} size={24} />
+          <div
+            className={`p-3 rounded-lg ${
+              isDark ? "bg-purple-900" : "bg-purple-100"
+            }`}
+          >
+            <Database
+              className={`${isDark ? "text-purple-300" : "text-purple-600"}`}
+              size={24}
+            />
           </div>
           <div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1
+              className={`text-2xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
               Material Database
             </h1>
-            <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
+            <p className={`${isDark ? "text-slate-400" : "text-gray-600"}`}>
               Comprehensive Material Properties and Flow Stress Data
             </p>
           </div>
         </div>
-        
+
         <div className="flex space-x-2">
-          <button 
+          <button
             onClick={() => setShowAddModal(true)}
             className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
-              isDark 
-                ? 'bg-purple-900 hover:bg-purple-800 text-purple-300' 
-                : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+              isDark
+                ? "bg-purple-900 hover:bg-purple-800 text-purple-300"
+                : "bg-purple-100 hover:bg-purple-200 text-purple-700"
             }`}
           >
             <Plus size={16} />
             <span>Add Material</span>
           </button>
-          <button className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
-            isDark 
-              ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-          }`}>
+          <button
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+              isDark
+                ? "bg-slate-700 hover:bg-slate-600 text-slate-300"
+                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+            }`}
+          >
             <Download size={16} />
             <span>Export</span>
           </button>
@@ -350,11 +423,20 @@ export function MaterialDatabase() {
       </div>
 
       {/* Search and Filter */}
-      <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+      <div
+        className={`${
+          isDark ? "bg-slate-800" : "bg-white"
+        } rounded-xl shadow-lg p-6`}
+      >
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} size={20} />
+              <Search
+                className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                  isDark ? "text-slate-400" : "text-gray-400"
+                }`}
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search materials..."
@@ -362,8 +444,8 @@ export function MaterialDatabase() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className={`w-full pl-10 pr-4 py-2 rounded-lg border transition-all ${
                   isDark
-                    ? 'bg-slate-700 border-slate-600 text-white focus:border-purple-500'
-                    : 'bg-white border-gray-300 text-gray-900 focus:border-purple-500'
+                    ? "bg-slate-700 border-slate-600 text-white focus:border-purple-500"
+                    : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                 }`}
               />
             </div>
@@ -384,8 +466,16 @@ export function MaterialDatabase() {
       {/* Materials Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Materials List */}
-        <div className={`lg:col-span-1 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <div
+          className={`lg:col-span-1 ${
+            isDark ? "bg-slate-800" : "bg-white"
+          } rounded-xl shadow-lg p-6`}
+        >
+          <h3
+            className={`text-lg font-semibold mb-4 ${
+              isDark ? "text-white" : "text-gray-900"
+            }`}
+          >
             Materials ({filteredMaterials.length})
           </h3>
           <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -396,26 +486,36 @@ export function MaterialDatabase() {
                 className={`w-full text-left p-3 rounded-lg transition-all hover:scale-[1.02] ${
                   selectedMaterial?.id === material.id
                     ? isDark
-                      ? 'bg-purple-900 text-purple-200'
-                      : 'bg-purple-50 text-purple-700'
+                      ? "bg-purple-900 text-purple-200"
+                      : "bg-purple-50 text-purple-700"
                     : isDark
-                      ? 'hover:bg-slate-700 text-slate-300'
-                      : 'hover:bg-gray-50 text-gray-700'
+                    ? "hover:bg-slate-700 text-slate-300"
+                    : "hover:bg-gray-50 text-gray-700"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{material.name}</div>
-                    <div className={`text-xs mt-1 ${
-                      selectedMaterial?.id === material.id
-                        ? isDark ? 'text-purple-300' : 'text-purple-600'
-                        : isDark ? 'text-slate-400' : 'text-gray-500'
-                    }`}>
-                      {material.category.charAt(0).toUpperCase() + material.category.slice(1)}
+                    <div
+                      className={`text-xs mt-1 ${
+                        selectedMaterial?.id === material.id
+                          ? isDark
+                            ? "text-purple-300"
+                            : "text-purple-600"
+                          : isDark
+                          ? "text-slate-400"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {material.category.charAt(0).toUpperCase() +
+                        material.category.slice(1)}
                     </div>
                   </div>
                   <div className="flex space-x-1">
-                    <Eye size={16} className={isDark ? 'text-slate-400' : 'text-gray-400'} />
+                    <Eye
+                      size={16}
+                      className={isDark ? "text-slate-400" : "text-gray-400"}
+                    />
                   </div>
                 </div>
               </button>
@@ -424,46 +524,72 @@ export function MaterialDatabase() {
         </div>
 
         {/* Material Details */}
-        <div className={`lg:col-span-2 ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
+        <div
+          className={`lg:col-span-2 ${
+            isDark ? "bg-slate-800" : "bg-white"
+          } rounded-xl shadow-lg p-6`}
+        >
           {selectedMaterial ? (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <h3
+                    className={`text-xl font-bold ${
+                      isDark ? "text-white" : "text-gray-900"
+                    }`}
+                  >
                     {selectedMaterial.name}
                   </h3>
-                  <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-                    {selectedMaterial.category.charAt(0).toUpperCase() + selectedMaterial.category.slice(1)} Material
+                  <p
+                    className={`${isDark ? "text-slate-400" : "text-gray-600"}`}
+                  >
+                    {selectedMaterial.category.charAt(0).toUpperCase() +
+                      selectedMaterial.category.slice(1)}{" "}
+                    Material
                   </p>
                 </div>
                 <div className="flex space-x-2">
-                  <button className={`p-2 rounded-lg transition-colors ${
-                    isDark 
-                      ? 'hover:bg-slate-700 text-slate-300' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}>
+                  <button
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDark
+                        ? "hover:bg-slate-700 text-slate-300"
+                        : "hover:bg-gray-100 text-gray-600"
+                    }`}
+                  >
                     <Edit size={16} />
                   </button>
-                  <button className={`p-2 rounded-lg transition-colors ${
-                    isDark 
-                      ? 'hover:bg-slate-700 text-slate-300' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}>
+                  <button
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDark
+                        ? "hover:bg-slate-700 text-slate-300"
+                        : "hover:bg-gray-100 text-gray-600"
+                    }`}
+                  >
                     <BookOpen size={16} />
                   </button>
                 </div>
               </div>
-              
+
               {renderMaterialProperties(selectedMaterial)}
             </div>
           ) : (
             <div className="text-center py-12">
-              <Database className={`mx-auto mb-4 ${isDark ? 'text-slate-400' : 'text-gray-400'}`} size={48} />
-              <h4 className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <Database
+                className={`mx-auto mb-4 ${
+                  isDark ? "text-slate-400" : "text-gray-400"
+                }`}
+                size={48}
+              />
+              <h4
+                className={`text-lg font-medium mb-2 ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Select a Material
               </h4>
-              <p className={`${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-                Choose a material from the list to view its detailed properties and characteristics.
+              <p className={`${isDark ? "text-slate-400" : "text-gray-600"}`}>
+                Choose a material from the list to view its detailed properties
+                and characteristics.
               </p>
             </div>
           )}
@@ -471,32 +597,40 @@ export function MaterialDatabase() {
       </div>
 
       {/* Statistics */}
-      <div className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+      <div
+        className={`${
+          isDark ? "bg-slate-800" : "bg-white"
+        } rounded-xl shadow-lg p-6`}
+      >
+        <h3
+          className={`text-lg font-semibold mb-4 ${
+            isDark ? "text-white" : "text-gray-900"
+          }`}
+        >
           Database Statistics
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <ResultCard
             title="Total Materials"
-            value={materials.length}
+            value={stats.total}
             description="Materials in database"
             trend="up"
           />
           <ResultCard
             title="Forming Materials"
-            value={materials.filter(m => m.category === 'forming').length}
+            value={stats.forming}
             description="For deformation processes"
             trend="neutral"
           />
           <ResultCard
             title="Cutting Materials"
-            value={materials.filter(m => m.category === 'cutting').length}
+            value={stats.cutting}
             description="For cutting operations"
             trend="neutral"
           />
           <ResultCard
             title="Machining Materials"
-            value={materials.filter(m => m.category === 'machining').length}
+            value={stats.machining}
             description="For machining operations"
             trend="neutral"
           />
@@ -504,20 +638,34 @@ export function MaterialDatabase() {
       </div>
 
       {/* Information Panel */}
-      <div className={`${isDark ? 'bg-purple-900/30' : 'bg-purple-50'} rounded-xl p-6 border ${isDark ? 'border-purple-800' : 'border-purple-200'}`}>
+      <div
+        className={`${
+          isDark ? "bg-purple-900/30" : "bg-purple-50"
+        } rounded-xl p-6 border ${
+          isDark ? "border-purple-800" : "border-purple-200"
+        }`}
+      >
         <div className="flex items-start space-x-3">
-          <BookOpen className={`${isDark ? 'text-purple-300' : 'text-purple-700'} mt-1`} size={20} />
+          <BookOpen
+            className={`${isDark ? "text-purple-300" : "text-purple-700"}`}
+            size={24}
+          />
           <div>
-            <h4 className={`font-semibold mb-2 ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>
-              Material Database Information
+            <h4
+              className={`font-semibold ${
+                isDark ? "text-purple-200" : "text-purple-900"
+              }`}
+            >
+              Material Data Reference
             </h4>
-            <div className={`text-sm space-y-1 ${isDark ? 'text-purple-200' : 'text-purple-600'}`}>
-              <p>• Material properties are sourced from standard engineering handbooks and databases</p>
-              <p>• Flow stress data includes temperature and strain rate dependencies</p>
-              <p>• Machining data provides recommended cutting parameters for different tool materials</p>
-              <p>• Properties are continuously updated based on latest research and industry standards</p>
-              <p>• Custom materials can be added with user-defined properties</p>
-            </div>
+            <p
+              className={`${
+                isDark ? "text-purple-200/80" : "text-purple-800/80"
+              } text-sm mt-1`}
+            >
+              All material data is sourced from reputable engineering handbooks
+              and standards. Always verify values for critical applications.
+            </p>
           </div>
         </div>
       </div>
