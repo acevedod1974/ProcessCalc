@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { InputField } from "../UI/InputField";
 import { ResultCard } from "../UI/ResultCard";
@@ -58,10 +58,8 @@ export function MaterialDatabase() {
   const [selectedMaterial, setSelectedMaterial] =
     useState<MaterialEntry | null>(null);
 
-  // Combine all materials into a unified database
-  const [materials, setMaterials] = useState<MaterialEntry[]>([]);
-
-  useEffect(() => {
+  // Combine all materials into a unified database using useMemo for performance
+  const materials = useMemo(() => {
     const combinedMaterials: MaterialEntry[] = [];
 
     // Add forming materials
@@ -94,7 +92,7 @@ export function MaterialDatabase() {
       });
     });
 
-    setMaterials(combinedMaterials);
+    return combinedMaterials;
   }, []);
 
   // Memoize filtered materials

@@ -17,13 +17,13 @@ This plan integrates all code review feedback and best practices for ProcessCalc
 ## 3. Performance Optimizations
 
 - [x] Use `React.memo` for pure UI components.
-- [ ] Use `useMemo` for expensive calculations and large data (e.g., material databases).
-- [ ] Refactor `MaterialDatabase.tsx` to avoid recreating large objects on every render.
-- [ ] Ensure all `setTimeout` and event listeners are properly cleaned up.
+- [x] Use `useMemo` for expensive calculations and large data (e.g., material databases).
+- [x] Refactor `MaterialDatabase.tsx` to avoid recreating large objects on every render.
+- [x] Ensure all `setTimeout` and event listeners are properly cleaned up.
 
 ## 4. Code Quality & Consistency
 
-- [ ] Standardize error handling: use a consistent pattern (throw or result object).
+- [x] Standardize error handling: use a consistent pattern (throw or result object).
 - [ ] Implement a global error boundary in the React app.
 - [ ] Add return type annotations and replace all `any` types with proper interfaces.
 - [ ] Refactor repeated validation and recommendation logic into shared utility functions.
