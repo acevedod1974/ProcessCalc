@@ -16,7 +16,7 @@ This plan integrates all code review feedback and best practices for ProcessCalc
 
 ## 3. Performance Optimizations
 
-- [ ] Use `React.memo` for pure UI components.
+- [x] Use `React.memo` for pure UI components.
 - [ ] Use `useMemo` for expensive calculations and large data (e.g., material databases).
 - [ ] Refactor `MaterialDatabase.tsx` to avoid recreating large objects on every render.
 - [ ] Ensure all `setTimeout` and event listeners are properly cleaned up.
