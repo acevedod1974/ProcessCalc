@@ -10,7 +10,7 @@ interface ResultCardProps {
   precision?: number;
 }
 
-export function ResultCard({ 
+export const ResultCard = React.memo(function ResultCard({ 
   title, 
   value, 
   unit, 
@@ -57,4 +57,4 @@ export function ResultCard({
       )}
     </div>
   );
-}
+});

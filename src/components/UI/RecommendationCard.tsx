@@ -7,7 +7,7 @@ interface RecommendationCardProps {
   type?: 'info' | 'warning' | 'success';
 }
 
-export function RecommendationCard({ recommendations, type = 'info' }: RecommendationCardProps) {
+export const RecommendationCard = React.memo(function RecommendationCard({ recommendations, type = 'info' }: RecommendationCardProps) {
   const { state } = useApp();
   const isDark = state.theme.mode === 'dark';
 
@@ -72,4 +72,4 @@ export function RecommendationCard({ recommendations, type = 'info' }: Recommend
       </div>
     </div>
   );
-}
+});

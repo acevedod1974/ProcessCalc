@@ -7,7 +7,7 @@ interface QualityIndicatorProps {
   maxValue?: number;
 }
 
-export function QualityIndicator({ quality, value, maxValue = 100 }: QualityIndicatorProps) {
+export const QualityIndicator = React.memo(function QualityIndicator({ quality, value, maxValue = 100 }: QualityIndicatorProps) {
   const { state } = useApp();
   const isDark = state.theme.mode === 'dark';
 
@@ -73,4 +73,4 @@ export function QualityIndicator({ quality, value, maxValue = 100 }: QualityIndi
       )}
     </div>
   );
-}
+});
