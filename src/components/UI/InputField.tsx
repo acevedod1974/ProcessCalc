@@ -16,7 +16,7 @@ interface InputFieldProps {
   max?: string;
 }
 
-export function InputField({
+export const InputField = React.memo(function InputField({
   label,
   value,
   onChange,
@@ -84,4 +84,4 @@ export function InputField({
       )}
     </div>
   );
-}
+});
