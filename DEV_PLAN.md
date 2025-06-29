@@ -6,13 +6,13 @@ This plan integrates all code review feedback and best practices for ProcessCalc
 
 ## 1. Critical Fixes
 
-- [ ] Ensure `src/components/Modules/VolumetricDeformation.tsx` exists and is correctly implemented.
-- [ ] Restore or recreate any missing core modules referenced in the UI.
+- [x] Ensure `src/components/Modules/VolumetricDeformation.tsx` exists and is correctly implemented.
+- [x] Restore or recreate any missing core modules referenced in the UI.
 
 ## 2. Security Improvements
 
-- [ ] Refactor `exportToPDF` in `src/utils/exportUtils.ts` to use HTML escaping or a template library.
-- [ ] Audit all user-generated content for XSS risks.
+- [x] Refactor `exportToPDF` in `src/utils/exportUtils.ts` to use HTML escaping or a template library and remove all `any` types from export utilities.
+- [x] Audit all user-generated content for XSS risks (including CSV formula injection and HTML export).
 
 ## 3. Performance Optimizations
 

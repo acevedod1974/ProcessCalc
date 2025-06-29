@@ -1,56 +1,113 @@
 // Export utilities for ProcessCalc
 
+export interface ExportCalculation {
+  id: string;
+  name: string;
+  type: string;
+  material: string;
+  timestamp: string | number;
+  projectId?: string;
+  parameters?: Record<string, unknown>;
+  results?: Record<string, unknown>;
+}
+
+export interface ExportProject {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string | number;
+  calculations?: ExportCalculation[];
+}
+
+export interface ExportSettings {
+  [key: string]: unknown;
+}
+
 export interface ExportData {
-  calculations: any[];
-  projects: any[];
-  settings: any;
+  calculations: ExportCalculation[];
+  projects: ExportProject[];
+  settings: ExportSettings;
   exportDate: string;
   version: string;
 }
 
 export function exportToJSON(data: ExportData): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
   downloadFile(blob, `processcalc-export-${formatDate(new Date())}.json`);
 }
 
-export function exportToCSV(calculations: any[]): void {
+export function exportToCSV(calculations: ExportCalculation[]): void {
   if (calculations.length === 0) {
-    alert('No calculations to export');
+    alert("No calculations to export");
     return;
   }
 
   // Get all unique keys from calculations
   const allKeys = new Set<string>();
-  calculations.forEach(calc => {
-    Object.keys(calc.parameters || {}).forEach(key => allKeys.add(`param_${key}`));
-    Object.keys(calc.results || {}).forEach(key => allKeys.add(`result_${key}`));
-    ['id', 'name', 'type', 'material', 'timestamp', 'projectId'].forEach(key => allKeys.add(key));
+  calculations.forEach((calc) => {
+    Object.keys(calc.parameters || {}).forEach((key) =>
+      allKeys.add(`param_${key}`)
+    );
+    Object.keys(calc.results || {}).forEach((key) =>
+      allKeys.add(`result_${key}`)
+    );
+    ["id", "name", "type", "material", "timestamp", "projectId"].forEach(
+      (key) => allKeys.add(key)
+    );
   });
 
   const headers = Array.from(allKeys).sort();
+  const escapeCsv = (value: unknown) => {
+    let str = String(value ?? "");
+    // Prevent formula injection
+    if (["=", "+", "-", "@"].includes(str[0])) {
+      str = "'" + str;
+    }
+    // Escape quotes
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      str = '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
   const csvContent = [
-    headers.join(','),
-    ...calculations.map(calc => 
-      headers.map(header => {
-        if (header.startsWith('param_')) {
-          const paramKey = header.replace('param_', '');
-          return calc.parameters?.[paramKey] || '';
-        } else if (header.startsWith('result_')) {
-          const resultKey = header.replace('result_', '');
-          return calc.results?.[resultKey] || '';
-        } else {
-          return calc[header] || '';
-        }
-      }).join(',')
-    )
-  ].join('\n');
+    headers.join(","),
+    ...calculations.map((calc) =>
+      headers
+        .map((header) => {
+          if (header.startsWith("param_")) {
+            const paramKey = header.replace("param_", "");
+            return escapeCsv(calc.parameters?.[paramKey]);
+          } else if (header.startsWith("result_")) {
+            const resultKey = header.replace("result_", "");
+            return escapeCsv(calc.results?.[resultKey]);
+          } else {
+            return escapeCsv(calc[header as keyof ExportCalculation]);
+          }
+        })
+        .join(",")
+    ),
+  ].join("\n");
 
-  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const blob = new Blob([csvContent], { type: "text/csv" });
   downloadFile(blob, `processcalc-calculations-${formatDate(new Date())}.csv`);
 }
 
-export function exportToPDF(calculations: any[], projects: any[]): void {
-  // Create a simple HTML report
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function exportToPDF(
+  calculations: ExportCalculation[],
+  projects: ExportProject[]
+): void {
+  // Create a simple HTML report with escaped content
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -70,52 +127,78 @@ export function exportToPDF(calculations: any[], projects: any[]): void {
     <body>
       <div class="header">
         <h1>ProcessCalc Report</h1>
-        <p>Generated on: ${new Date().toLocaleString()}</p>
+        <p>Generated on: ${escapeHtml(new Date().toLocaleString())}</p>
       </div>
       
       <div class="section">
         <h2>Projects (${projects.length})</h2>
-        ${projects.map(project => `
+        ${projects
+          .map(
+            (project) => `
           <div class="project">
-            <h3>${project.name}</h3>
-            <p>${project.description}</p>
-            <p><strong>Created:</strong> ${new Date(project.createdAt).toLocaleDateString()}</p>
-            <p><strong>Calculations:</strong> ${project.calculations?.length || 0}</p>
+            <h3>${escapeHtml(project.name)}</h3>
+            <p>${escapeHtml(project.description || "")}</p>
+            <p><strong>Created:</strong> ${escapeHtml(
+              new Date(project.createdAt).toLocaleDateString()
+            )}</p>
+            <p><strong>Calculations:</strong> ${escapeHtml(
+              String(project.calculations?.length || 0)
+            )}</p>
           </div>
-        `).join('')}
+        `
+          )
+          .join("")}
       </div>
       
       <div class="section">
         <h2>Calculations (${calculations.length})</h2>
-        ${calculations.map(calc => `
+        ${calculations
+          .map(
+            (calc) => `
           <div class="calculation">
-            <h3>${calc.name}</h3>
-            <p><strong>Type:</strong> ${calc.type}</p>
-            <p><strong>Material:</strong> ${calc.material}</p>
-            <p><strong>Date:</strong> ${new Date(calc.timestamp).toLocaleDateString()}</p>
+            <h3>${escapeHtml(calc.name)}</h3>
+            <p><strong>Type:</strong> ${escapeHtml(calc.type)}</p>
+            <p><strong>Material:</strong> ${escapeHtml(calc.material)}</p>
+            <p><strong>Date:</strong> ${escapeHtml(
+              new Date(calc.timestamp).toLocaleDateString()
+            )}</p>
             
             <h4>Parameters</h4>
             <table>
-              ${Object.entries(calc.parameters || {}).map(([key, value]) => `
-                <tr><td>${key}</td><td>${value}</td></tr>
-              `).join('')}
+              ${Object.entries(calc.parameters || {})
+                .map(
+                  ([key, value]) => `
+                <tr><td>${escapeHtml(key)}</td><td>${escapeHtml(
+                    String(value)
+                  )}</td></tr>
+              `
+                )
+                .join("")}
             </table>
             
             <h4>Results</h4>
             <table>
-              ${Object.entries(calc.results || {}).map(([key, value]) => `
-                <tr><td>${key}</td><td>${value}</td></tr>
-              `).join('')}
+              ${Object.entries(calc.results || {})
+                .map(
+                  ([key, value]) => `
+                <tr><td>${escapeHtml(key)}</td><td>${escapeHtml(
+                    String(value)
+                  )}</td></tr>
+              `
+                )
+                .join("")}
             </table>
           </div>
-        `).join('')}
+        `
+          )
+          .join("")}
       </div>
     </body>
     </html>
   `;
 
   // Create a new window and print
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (printWindow) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
@@ -134,18 +217,18 @@ export function importFromJSON(file: File): Promise<ExportData> {
       try {
         const data = JSON.parse(e.target?.result as string);
         resolve(data);
-      } catch (error) {
-        reject(new Error('Invalid JSON file'));
+      } catch {
+        reject(new Error("Invalid JSON file"));
       }
     };
-    reader.onerror = () => reject(new Error('Error reading file'));
+    reader.onerror = () => reject(new Error("Error reading file"));
     reader.readAsText(file);
   });
 }
 
 function downloadFile(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -155,63 +238,67 @@ function downloadFile(blob: Blob, filename: string): void {
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 }
 
 // Unit conversion utilities
-export function convertUnits(value: number, fromUnit: string, toUnit: string): number {
+export function convertUnits(
+  value: number,
+  fromUnit: string,
+  toUnit: string
+): number {
   const conversions: Record<string, Record<string, number>> = {
     length: {
-      'mm': 1,
-      'cm': 10,
-      'm': 1000,
-      'in': 25.4,
-      'ft': 304.8
+      mm: 1,
+      cm: 10,
+      m: 1000,
+      in: 25.4,
+      ft: 304.8,
     },
     force: {
-      'N': 1,
-      'kN': 1000,
-      'MN': 1000000,
-      'lbf': 4.448,
-      'kip': 4448
+      N: 1,
+      kN: 1000,
+      MN: 1000000,
+      lbf: 4.448,
+      kip: 4448,
     },
     pressure: {
-      'Pa': 1,
-      'kPa': 1000,
-      'MPa': 1000000,
-      'psi': 6895,
-      'ksi': 6895000
+      Pa: 1,
+      kPa: 1000,
+      MPa: 1000000,
+      psi: 6895,
+      ksi: 6895000,
     },
     power: {
-      'W': 1,
-      'kW': 1000,
-      'MW': 1000000,
-      'hp': 745.7
+      W: 1,
+      kW: 1000,
+      MW: 1000000,
+      hp: 745.7,
     },
     temperature: {
-      '°C': (val: number, to: string) => {
-        if (to === '°F') return (val * 9/5) + 32;
-        if (to === 'K') return val + 273.15;
+      "°C": (val: number, to: string) => {
+        if (to === "°F") return (val * 9) / 5 + 32;
+        if (to === "K") return val + 273.15;
         return val;
       },
-      '°F': (val: number, to: string) => {
-        if (to === '°C') return (val - 32) * 5/9;
-        if (to === 'K') return ((val - 32) * 5/9) + 273.15;
+      "°F": (val: number, to: string) => {
+        if (to === "°C") return ((val - 32) * 5) / 9;
+        if (to === "K") return ((val - 32) * 5) / 9 + 273.15;
         return val;
       },
-      'K': (val: number, to: string) => {
-        if (to === '°C') return val - 273.15;
-        if (to === '°F') return ((val - 273.15) * 9/5) + 32;
+      K: (val: number, to: string) => {
+        if (to === "°C") return val - 273.15;
+        if (to === "°F") return ((val - 273.15) * 9) / 5 + 32;
         return val;
-      }
-    }
+      },
+    },
   };
 
   // Find the unit category
   for (const [category, units] of Object.entries(conversions)) {
-    if (category === 'temperature') {
+    if (category === "temperature") {
       const converter = units[fromUnit];
-      if (typeof converter === 'function') {
+      if (typeof converter === "function") {
         return converter(value, toUnit);
       }
     } else {
