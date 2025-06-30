@@ -7,8 +7,11 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
 ## Fase 1: Corrección Fundamental (Prioridad Inmediata)
 
 - [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`calculations.ts` - función calculateRolling auditada y corregida; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
+  - [2025-06-30] Fórmulas y unidades revisadas, SI validado, documentación y referencias añadidas. Ver detalles al final del plan.
 - [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`cuttingCalculations.ts` - funciones calculatePunching y calculateShearing auditadas y corregidas; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
+  - [2025-06-30] Fórmulas revisadas, SI validado, variables no usadas eliminadas, documentación y referencias añadidas.
 - [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`machiningCalculations.ts`, `drawingExtrusionCalculations.ts` - todas las funciones principales auditadas y corregidas; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
+  - [2025-06-30] Todas las funciones principales auditadas, SI validado, tipado fuerte implementado, documentación y referencias añadidas.
 - [ ] Validar todas las fórmulas con fuentes de ingeniería y/o expertos.
 - [ ] Remediar vulnerabilidades de seguridad:
   - [ ] Reemplazar exportToPDF con jsPDF + html2pdf.js.
@@ -17,7 +20,8 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
 
 ## Fase 2: Modernización y Refactorización (Corto Plazo)
 
-- [ ] Actualizar dependencias clave (React 19, ESLint 9, Vite, etc.).
+- [x] Actualizar dependencias clave (React 19, ESLint 9, Vite, etc.).
+  - [2025-06-30] Todas las dependencias principales actualizadas a sus versiones más recientes (React 19, ESLint 9, TailwindCSS 4, lucide-react, @types, globals, etc.) y reinstaladas correctamente.
 - [ ] Refactorizar todos los formularios para usar useActionState de React 19.
 - [ ] Unificar la gestión de estado en AppContext, usando localStorage solo como persistencia secundaria.
 - [ ] Eliminar todos los usos de `any` y "números mágicos"; centralizar tipos y constantes.
