@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useActionState, useEffect } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { InputField } from "../UI/InputField";
 import { ResultCard } from "../UI/ResultCard";
@@ -12,23 +12,10 @@ import {
   CheckCircle,
 } from "lucide-react";
 import {
-  MATERIALS,
   calculateRolling,
-  calculateForging,
   RollingParameters,
-  ForgingParameters,
   RollingResults,
-  ForgingResults,
 } from "../../utils/calculations";
-import {
-  DRAWING_MATERIALS,
-  calculateWireDrawing,
-  calculateExtrusion,
-  WireDrawingParameters,
-  ExtrusionParameters,
-  WireDrawingResults,
-  ExtrusionResults,
-} from "../../utils/drawingExtrusionCalculations";
 
 type DeformationProcess = "rolling" | "forging" | "drawing" | "extrusion";
 
@@ -39,373 +26,91 @@ export function VolumetricDeformation() {
   // State management
   const [activeProcess, setActiveProcess] =
     useState<DeformationProcess>("rolling");
-  const [isCalculating, setIsCalculating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Rolling parameters
-  const [rollingParams, setRollingParams] = useState<
-    Partial<RollingParameters>
-  >({
-    material: "",
-    initialThickness: "",
-    finalThickness: "",
-    width: "",
-    rollDiameter: "",
-    rollingSpeed: "",
-    frictionCoefficient: "0.3",
-    temperature: "20",
-  });
+  // Rolling form state and action (React 19)
+  type RollingFormState = {
+    params: Partial<RollingParameters>;
+    isCalculating: boolean;
+    errors: Record<string, string>;
+    results: RollingResults | null;
+  };
 
-  // Forging parameters
-  const [forgingParams, setForgingParams] = useState<
-    Partial<ForgingParameters>
-  >({
-    material: "",
-    initialHeight: "",
-    finalHeight: "",
-    diameter: "",
-    frictionCoefficient: "0.3",
-    temperature: "20",
-    dieType: "flat",
-  });
+  const initialRollingState: RollingFormState = {
+    params: {
+      material: "",
+      initialThickness: "",
+      finalThickness: "",
+      width: "",
+      rollDiameter: "",
+      rollingSpeed: "",
+      frictionCoefficient: "0.3",
+      temperature: "20",
+    },
+    isCalculating: false,
+    errors: {},
+    results: null,
+  };
 
-  // Drawing parameters
-  const [drawingParams, setDrawingParams] = useState<
-    Partial<WireDrawingParameters>
-  >({
-    material: "",
-    initialDiameter: "",
-    finalDiameter: "",
-    drawingSpeed: "",
-    dieAngle: "8",
-    numberOfPasses: "1",
-    lubrication: true,
-    temperature: "20",
-  });
-
-  // Extrusion parameters
-  const [extrusionParams, setExtrusionParams] = useState<
-    Partial<ExtrusionParameters>
-  >({
-    material: "",
-    billetDiameter: "",
-    extrudedDiameter: "",
-    billetLength: "",
-    extrusionSpeed: "",
-    dieAngle: "45",
-    temperature: "400",
-    extrusionType: "direct",
-    lubrication: true,
-  });
-
-  // Results
-  const [rollingResults, setRollingResults] = useState<RollingResults | null>(
-    null
-  );
-  const [forgingResults, setForgingResults] = useState<ForgingResults | null>(
-    null
-  );
-  const [drawingResults, setDrawingResults] =
-    useState<WireDrawingResults | null>(null);
-  const [extrusionResults, setExtrusionResults] =
-    useState<ExtrusionResults | null>(null);
-
-  // Material options
-  const formingMaterialOptions = Object.entries(MATERIALS).map(
-    ([key, material]) => ({
-      value: key,
-      label: material.name,
-    })
-  );
-
-  const drawingMaterialOptions = Object.entries(DRAWING_MATERIALS).map(
-    ([key, material]) => ({
-      value: key,
-      label: material.name,
-    })
-  );
-
-  // Validation functions
-  const validateRollingInputs = (): boolean => {
+  function validateRollingInputs(
+    params: Partial<RollingParameters>
+  ): Record<string, string> {
     const newErrors: Record<string, string> = {};
-
-    if (!rollingParams.material) newErrors.material = "Material is required";
-    if (
-      !rollingParams.initialThickness ||
-      Number(rollingParams.initialThickness) <= 0
-    ) {
+    if (!params.material) newErrors.material = "Material is required";
+    if (!params.initialThickness || Number(params.initialThickness) <= 0)
       newErrors.initialThickness = "Initial thickness must be greater than 0";
-    }
-    if (
-      !rollingParams.finalThickness ||
-      Number(rollingParams.finalThickness) <= 0
-    ) {
+    if (!params.finalThickness || Number(params.finalThickness) <= 0)
       newErrors.finalThickness = "Final thickness must be greater than 0";
-    }
-    if (
-      Number(rollingParams.finalThickness) >=
-      Number(rollingParams.initialThickness)
-    ) {
+    if (Number(params.finalThickness) >= Number(params.initialThickness))
       newErrors.finalThickness =
         "Final thickness must be less than initial thickness";
-    }
-    if (!rollingParams.width || Number(rollingParams.width) <= 0) {
+    if (!params.width || Number(params.width) <= 0)
       newErrors.width = "Width must be greater than 0";
-    }
-    if (
-      !rollingParams.rollDiameter ||
-      Number(rollingParams.rollDiameter) <= 0
-    ) {
+    if (!params.rollDiameter || Number(params.rollDiameter) <= 0)
       newErrors.rollDiameter = "Roll diameter must be greater than 0";
-    }
-    if (
-      !rollingParams.rollingSpeed ||
-      Number(rollingParams.rollingSpeed) <= 0
-    ) {
+    if (!params.rollingSpeed || Number(params.rollingSpeed) <= 0)
       newErrors.rollingSpeed = "Rolling speed must be greater than 0";
-    }
+    return newErrors;
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateForgingInputs = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!forgingParams.material) newErrors.material = "Material is required";
-    if (
-      !forgingParams.initialHeight ||
-      Number(forgingParams.initialHeight) <= 0
-    ) {
-      newErrors.initialHeight = "Initial height must be greater than 0";
+  async function rollingAction(
+    prevState: RollingFormState,
+    formData: Partial<RollingParameters>
+  ): Promise<RollingFormState> {
+    const errors = validateRollingInputs(formData);
+    if (Object.keys(errors).length > 0) {
+      return { ...prevState, errors };
     }
-    if (!forgingParams.finalHeight || Number(forgingParams.finalHeight) <= 0) {
-      newErrors.finalHeight = "Final height must be greater than 0";
-    }
-    if (
-      Number(forgingParams.finalHeight) >= Number(forgingParams.initialHeight)
-    ) {
-      newErrors.finalHeight = "Final height must be less than initial height";
-    }
-    if (!forgingParams.diameter || Number(forgingParams.diameter) <= 0) {
-      newErrors.diameter = "Diameter must be greater than 0";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateDrawingInputs = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!drawingParams.material) newErrors.material = "Material is required";
-    if (
-      !drawingParams.initialDiameter ||
-      Number(drawingParams.initialDiameter) <= 0
-    ) {
-      newErrors.initialDiameter = "Initial diameter must be greater than 0";
-    }
-    if (
-      !drawingParams.finalDiameter ||
-      Number(drawingParams.finalDiameter) <= 0
-    ) {
-      newErrors.finalDiameter = "Final diameter must be greater than 0";
-    }
-    if (
-      Number(drawingParams.finalDiameter) >=
-      Number(drawingParams.initialDiameter)
-    ) {
-      newErrors.finalDiameter =
-        "Final diameter must be less than initial diameter";
-    }
-    if (
-      !drawingParams.drawingSpeed ||
-      Number(drawingParams.drawingSpeed) <= 0
-    ) {
-      newErrors.drawingSpeed = "Drawing speed must be greater than 0";
-    }
-    if (
-      !drawingParams.numberOfPasses ||
-      Number(drawingParams.numberOfPasses) < 1
-    ) {
-      newErrors.numberOfPasses = "Number of passes must be at least 1";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateExtrusionInputs = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!extrusionParams.material) newErrors.material = "Material is required";
-    if (
-      !extrusionParams.billetDiameter ||
-      Number(extrusionParams.billetDiameter) <= 0
-    ) {
-      newErrors.billetDiameter = "Billet diameter must be greater than 0";
-    }
-    if (
-      !extrusionParams.extrudedDiameter ||
-      Number(extrusionParams.extrudedDiameter) <= 0
-    ) {
-      newErrors.extrudedDiameter = "Extruded diameter must be greater than 0";
-    }
-    if (
-      Number(extrusionParams.extrudedDiameter) >=
-      Number(extrusionParams.billetDiameter)
-    ) {
-      newErrors.extrudedDiameter =
-        "Extruded diameter must be less than billet diameter";
-    }
-    if (
-      !extrusionParams.billetLength ||
-      Number(extrusionParams.billetLength) <= 0
-    ) {
-      newErrors.billetLength = "Billet length must be greater than 0";
-    }
-    if (
-      !extrusionParams.extrusionSpeed ||
-      Number(extrusionParams.extrusionSpeed) <= 0
-    ) {
-      newErrors.extrusionSpeed = "Extrusion speed must be greater than 0";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Calculate functions
-  const handleRollingCalculation = async () => {
-    if (!validateRollingInputs()) return;
-
-    setIsCalculating(true);
     try {
       const params: RollingParameters = {
-        material: rollingParams.material!,
-        initialThickness: Number(rollingParams.initialThickness),
-        finalThickness: Number(rollingParams.finalThickness),
-        width: Number(rollingParams.width),
-        rollDiameter: Number(rollingParams.rollDiameter),
-        rollingSpeed: Number(rollingParams.rollingSpeed),
-        frictionCoefficient: Number(rollingParams.frictionCoefficient || 0.3),
-        temperature: Number(rollingParams.temperature || 20),
+        material: formData.material!,
+        initialThickness: Number(formData.initialThickness),
+        finalThickness: Number(formData.finalThickness),
+        width: Number(formData.width),
+        rollDiameter: Number(formData.rollDiameter),
+        rollingSpeed: Number(formData.rollingSpeed),
+        frictionCoefficient: Number(formData.frictionCoefficient || 0.3),
+        temperature: Number(formData.temperature || 20),
       };
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       const results = calculateRolling(params);
-      setRollingResults(results);
+      return { ...prevState, results, errors: {}, isCalculating: false };
     } catch (error) {
       const errMsg =
         error instanceof Error
           ? error.message
           : "An unexpected error occurred.";
-      setErrors({ global: errMsg });
-    } finally {
-      setIsCalculating(false);
+      return { ...prevState, errors: { global: errMsg }, isCalculating: false };
     }
-  };
+  }
 
-  const handleForgingCalculation = async () => {
-    if (!validateForgingInputs()) return;
-
-    setIsCalculating(true);
-    try {
-      const params: ForgingParameters = {
-        material: forgingParams.material!,
-        initialHeight: Number(forgingParams.initialHeight),
-        finalHeight: Number(forgingParams.finalHeight),
-        diameter: Number(forgingParams.diameter),
-        frictionCoefficient: Number(forgingParams.frictionCoefficient || 0.3),
-        temperature: Number(forgingParams.temperature || 20),
-        dieType: forgingParams.dieType as "flat" | "grooved",
-      };
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const results = calculateForging(params);
-      setForgingResults(results);
-    } catch (error) {
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-      setErrors({ global: errMsg });
-    } finally {
-      setIsCalculating(false);
-    }
-  };
-
-  const handleDrawingCalculation = async () => {
-    if (!validateDrawingInputs()) return;
-
-    setIsCalculating(true);
-    try {
-      const params: WireDrawingParameters = {
-        material: drawingParams.material!,
-        initialDiameter: Number(drawingParams.initialDiameter),
-        finalDiameter: Number(drawingParams.finalDiameter),
-        drawingSpeed: Number(drawingParams.drawingSpeed),
-        dieAngle: Number(drawingParams.dieAngle || 8),
-        numberOfPasses: Number(drawingParams.numberOfPasses || 1),
-        lubrication: drawingParams.lubrication || false,
-        temperature: Number(drawingParams.temperature || 20),
-      };
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const results = calculateWireDrawing(params);
-      setDrawingResults(results);
-    } catch (error) {
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-      setErrors({ global: errMsg });
-    } finally {
-      setIsCalculating(false);
-    }
-  };
-
-  const handleExtrusionCalculation = async () => {
-    if (!validateExtrusionInputs()) return;
-
-    setIsCalculating(true);
-    try {
-      const params: ExtrusionParameters = {
-        material: extrusionParams.material!,
-        billetDiameter: Number(extrusionParams.billetDiameter),
-        extrudedDiameter: Number(extrusionParams.extrudedDiameter),
-        billetLength: Number(extrusionParams.billetLength),
-        extrusionSpeed: Number(extrusionParams.extrusionSpeed),
-        dieAngle: Number(extrusionParams.dieAngle || 45),
-        temperature: Number(extrusionParams.temperature || 400),
-        extrusionType: extrusionParams.extrusionType as "direct" | "indirect",
-        lubrication: extrusionParams.lubrication || false,
-      };
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const results = calculateExtrusion(params);
-      setExtrusionResults(results);
-    } catch (error) {
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-      setErrors({ global: errMsg });
-    } finally {
-      setIsCalculating(false);
-    }
-  };
+  const [rollingState, rollingDispatch, rollingSubmit] = useActionState(
+    rollingAction,
+    initialRollingState
+  );
 
   // Clear results when process changes
   useEffect(() => {
-    setRollingResults(null);
-    setForgingResults(null);
-    setDrawingResults(null);
-    setExtrusionResults(null);
     setErrors({});
   }, [activeProcess]);
 
@@ -556,26 +261,31 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Material"
-                  value={rollingParams.material || ""}
+                  value={rollingState.params.material || ""}
                   onChange={(value) =>
-                    setRollingParams((prev) => ({ ...prev, material: value }))
+                    rollingDispatch({
+                      ...rollingState,
+                      params: { ...rollingState.params, material: value },
+                    })
                   }
                   type="select"
                   options={formingMaterialOptions}
                   placeholder="Select Material..."
                   required
-                  error={errors.material}
+                  error={rollingState.errors.material}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Initial Thickness"
-                    value={rollingParams.initialThickness || ""}
+                    value={rollingState.params.initialThickness || ""}
                     onChange={(value) =>
-                      setRollingParams((prev) => ({
-                        ...prev,
-                        initialThickness: value,
-                      }))
+                      rollingDispatch({
+                        ...rollingState,
+                        params: {
+                          ...rollingState.params,
+                          initialThickness: value,
+                        },
+                      })
                     }
                     type="number"
                     placeholder="10.0"
@@ -583,16 +293,19 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.initialThickness}
+                    error={rollingState.errors.initialThickness}
                   />
                   <InputField
                     label="Final Thickness"
-                    value={rollingParams.finalThickness || ""}
+                    value={rollingState.params.finalThickness || ""}
                     onChange={(value) =>
-                      setRollingParams((prev) => ({
-                        ...prev,
-                        finalThickness: value,
-                      }))
+                      rollingDispatch({
+                        ...rollingState,
+                        params: {
+                          ...rollingState.params,
+                          finalThickness: value,
+                        },
+                      })
                     }
                     type="number"
                     placeholder="8.0"
@@ -600,15 +313,17 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.finalThickness}
+                    error={rollingState.errors.finalThickness}
                   />
                 </div>
-
                 <InputField
                   label="Width"
-                  value={rollingParams.width || ""}
+                  value={rollingState.params.width || ""}
                   onChange={(value) =>
-                    setRollingParams((prev) => ({ ...prev, width: value }))
+                    rollingDispatch({
+                      ...rollingState,
+                      params: { ...rollingState.params, width: value },
+                    })
                   }
                   type="number"
                   placeholder="100.0"
@@ -616,11 +331,10 @@ export function VolumetricDeformation() {
                   required
                   step="1"
                   min="0"
-                  error={errors.width}
+                  error={rollingState.errors.width}
                 />
               </div>
             </div>
-
             <div
               className={`${
                 isDark ? "bg-slate-800" : "bg-white"
@@ -636,12 +350,12 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Roll Diameter"
-                  value={rollingParams.rollDiameter || ""}
+                  value={rollingState.params.rollDiameter || ""}
                   onChange={(value) =>
-                    setRollingParams((prev) => ({
-                      ...prev,
-                      rollDiameter: value,
-                    }))
+                    rollingDispatch({
+                      ...rollingState,
+                      params: { ...rollingState.params, rollDiameter: value },
+                    })
                   }
                   type="number"
                   placeholder="300.0"
@@ -649,17 +363,16 @@ export function VolumetricDeformation() {
                   required
                   step="1"
                   min="0"
-                  error={errors.rollDiameter}
+                  error={rollingState.errors.rollDiameter}
                 />
-
                 <InputField
                   label="Rolling Speed"
-                  value={rollingParams.rollingSpeed || ""}
+                  value={rollingState.params.rollingSpeed || ""}
                   onChange={(value) =>
-                    setRollingParams((prev) => ({
-                      ...prev,
-                      rollingSpeed: value,
-                    }))
+                    rollingDispatch({
+                      ...rollingState,
+                      params: { ...rollingState.params, rollingSpeed: value },
+                    })
                   }
                   type="number"
                   placeholder="50.0"
@@ -667,18 +380,20 @@ export function VolumetricDeformation() {
                   required
                   step="1"
                   min="0"
-                  error={errors.rollingSpeed}
+                  error={rollingState.errors.rollingSpeed}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Friction Coefficient"
-                    value={rollingParams.frictionCoefficient || ""}
+                    value={rollingState.params.frictionCoefficient || ""}
                     onChange={(value) =>
-                      setRollingParams((prev) => ({
-                        ...prev,
-                        frictionCoefficient: value,
-                      }))
+                      rollingDispatch({
+                        ...rollingState,
+                        params: {
+                          ...rollingState.params,
+                          frictionCoefficient: value,
+                        },
+                      })
                     }
                     type="number"
                     placeholder="0.3"
@@ -688,12 +403,12 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Temperature"
-                    value={rollingParams.temperature || ""}
+                    value={rollingState.params.temperature || ""}
                     onChange={(value) =>
-                      setRollingParams((prev) => ({
-                        ...prev,
-                        temperature: value,
-                      }))
+                      rollingDispatch({
+                        ...rollingState,
+                        params: { ...rollingState.params, temperature: value },
+                      })
                     }
                     type="number"
                     placeholder="20"
@@ -701,13 +416,12 @@ export function VolumetricDeformation() {
                     step="1"
                   />
                 </div>
-
                 <button
-                  onClick={handleRollingCalculation}
-                  disabled={isCalculating}
+                  onClick={() => rollingSubmit(rollingState.params)}
+                  disabled={rollingState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
-                  {isCalculating ? (
+                  {rollingState.isCalculating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                       <span>Calculating...</span>
@@ -724,7 +438,7 @@ export function VolumetricDeformation() {
           </div>
 
           {/* Rolling Results */}
-          {rollingResults && (
+          {rollingState.results && (
             <>
               <div
                 className={`${
@@ -750,28 +464,28 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <ResultCard
                     title="Reduction Ratio"
-                    value={rollingResults.reductionRatio}
+                    value={rollingState.results.reductionRatio}
                     unit="%"
                     description="Percentage reduction in thickness"
                     trend="up"
                   />
                   <ResultCard
                     title="Rolling Force"
-                    value={rollingResults.rollingForce}
+                    value={rollingState.results.rollingForce}
                     unit={state.unitSystem.force}
                     description="Force required for rolling"
                     trend="up"
                   />
                   <ResultCard
                     title="Rolling Power"
-                    value={rollingResults.rollingPower}
+                    value={rollingState.results.rollingPower}
                     unit={state.unitSystem.power}
                     description="Power consumption"
                     trend="up"
                   />
                   <ResultCard
                     title="Contact Length"
-                    value={rollingResults.contactLength}
+                    value={rollingState.results.contactLength}
                     unit={state.unitSystem.length}
                     description="Roll-workpiece contact length"
                     trend="neutral"
@@ -781,27 +495,27 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <ResultCard
                     title="True Strain"
-                    value={rollingResults.trueStrain}
+                    value={rollingState.results.trueStrain}
                     description="Logarithmic strain"
                     trend="neutral"
                   />
                   <ResultCard
                     title="Average Flow Stress"
-                    value={rollingResults.averageFlowStress}
+                    value={rollingState.results.averageFlowStress}
                     unit={state.unitSystem.pressure}
                     description="Material flow stress"
                     trend="up"
                   />
                   <ResultCard
                     title="Exit Velocity"
-                    value={rollingResults.exitVelocity}
+                    value={rollingState.results.exitVelocity}
                     unit="m/min"
                     description="Material exit velocity"
                     trend="up"
                   />
                   <ResultCard
                     title="Forward Slip"
-                    value={rollingResults.forwardSlip}
+                    value={rollingState.results.forwardSlip}
                     unit="%"
                     description="Forward slip percentage"
                     trend="neutral"
