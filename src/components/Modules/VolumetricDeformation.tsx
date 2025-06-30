@@ -1,4 +1,4 @@
-import React, { useActionState, useEffect } from "react";
+import React, { useState, useActionState, useEffect } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { InputField } from "../UI/InputField";
 import { ResultCard } from "../UI/ResultCard";
@@ -16,6 +16,14 @@ import {
   RollingParameters,
   RollingResults,
 } from "../../utils/calculations";
+
+const formingMaterialOptions = [
+  { value: "steel", label: "Steel" },
+  { value: "aluminum", label: "Aluminum" },
+  { value: "copper", label: "Copper" },
+  { value: "brass", label: "Brass" },
+  // Puedes agregar más materiales según necesidad
+];
 
 type DeformationProcess = "rolling" | "forging" | "drawing" | "extrusion";
 
