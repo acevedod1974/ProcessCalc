@@ -82,3 +82,14 @@ Trabaja cada fase en orden. Marca los ítems completados y haz commit en la rama
 - Corrección de conversiones, factores empíricos y recomendaciones.
 - Referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology, 8th Ed.
 - Listo para validación cruzada y revisión de expertos.
+
+#### Validación de fórmulas y unidades (todas las utilidades de cálculo):
+
+- Todas las fórmulas y unidades han sido revisadas y corregidas conforme a fuentes de ingeniería reconocidas (Kalpakjian & Schmid, DeGarmo, Shigley, manuales de procesos de manufactura y metalurgia).
+- Se recomienda validación cruzada por ingeniero mecánico o manufactura para:
+  - Consistencia de unidades SI en entradas y salidas.
+  - Exactitud física de cada fórmula (reducción, esfuerzo, potencia, energía, eficiencia, etc.).
+  - Factores empíricos y recomendaciones prácticas.
+- Cada función principal (`calculateRolling`, `calculateForging`, `calculatePunching`, `calculateShearing`, `calculateTurning`, `calculateMilling`, `calculateDrilling`, `calculateWireDrawing`, `calculateExtrusion`) está documentada con comentarios y referencias.
+- Se sugiere revisión de casos límite y validación con ejemplos de literatura o software de ingeniería.
+- Una vez validado por experto, marcar este ítem como completado y dejar constancia de la fuente o persona que realizó la validación.
