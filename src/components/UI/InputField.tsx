@@ -49,12 +49,18 @@ export const InputField = React.memo(function InputField({
         className={`block text-sm font-medium ${
           isDark ? "text-slate-300" : "text-gray-700"
         }`}
+        htmlFor={label.replace(/\s+/g, "-").toLowerCase()}
       >
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && (
+          <span className="text-red-500 ml-1" aria-label="required">
+            *
+          </span>
+        )}
         {unit && (
           <span
             className={`ml-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+            aria-label={`unit: ${unit}`}
           >
             ({unit})
           </span>
@@ -63,9 +69,11 @@ export const InputField = React.memo(function InputField({
 
       {type === "select" ? (
         <select
+          id={label.replace(/\s+/g, "-").toLowerCase()}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={baseInputClasses}
+          aria-label={label}
         >
           <option value="">{placeholder || "Select..."}</option>
           {options.map((option) => (
@@ -76,21 +84,28 @@ export const InputField = React.memo(function InputField({
         </select>
       ) : (
         <input
+          id={label.replace(/\s+/g, "-").toLowerCase()}
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
           className={baseInputClasses}
+          placeholder={placeholder}
+          aria-label={label}
+          aria-required={required}
+          aria-invalid={!!error}
           step={step}
           min={min}
           max={max}
         />
       )}
-
       {error && (
-        <p className={`text-sm ${isDark ? "text-red-400" : "text-red-600"}`}>
+        <div
+          className="text-xs text-red-500 mt-1"
+          role="alert"
+          aria-live="polite"
+        >
           {error}
-        </p>
+        </div>
       )}
     </div>
   );

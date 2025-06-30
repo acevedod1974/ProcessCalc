@@ -57,6 +57,7 @@ export function MaterialDatabase() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedMaterial, setSelectedMaterial] =
     useState<MaterialEntry | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Combine all materials into a unified database using useMemo for performance
   const materials = useMemo(() => {
@@ -667,6 +668,46 @@ export function MaterialDatabase() {
           </div>
         </div>
       </div>
+
+      {/* Add Material Modal */}
+      {showAddModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-material-title"
+          tabIndex={-1}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8 w-full max-w-md relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="add-material-title"
+              className="text-xl font-bold mb-4 text-gray-900 dark:text-white"
+            >
+              Add New Material
+            </h2>
+            {/* Add form fields here */}
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-white"
+              aria-label="Close add material dialog"
+              onClick={() => setShowAddModal(false)}
+              autoFocus
+            >
+              ×
+            </button>
+            {/* Example input for focus demonstration */}
+            <input
+              className="w-full border rounded p-2 mt-4"
+              placeholder="Material Name"
+              aria-label="Material Name"
+              autoFocus
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -59,7 +59,12 @@ export const QualityIndicator = React.memo(function QualityIndicator({
   const percentage = value ? (value / maxValue) * 100 : colors.percentage;
 
   return (
-    <div className={`${colors.bg} rounded-lg p-4`}>
+    <div
+      className={`${colors.bg} rounded-lg p-4`}
+      role="region"
+      aria-label="cut quality indicator"
+      tabIndex={0}
+    >
       <div className="flex items-center justify-between mb-2">
         <span className={`font-medium ${colors.text}`}>Cut Quality</span>
         <span className={`text-sm font-bold ${colors.text}`}>{quality}</span>
@@ -68,6 +73,11 @@ export const QualityIndicator = React.memo(function QualityIndicator({
         className={`w-full bg-gray-300 rounded-full h-2 ${
           isDark ? "bg-gray-700" : ""
         }`}
+        aria-label="quality bar"
+        role="progressbar"
+        aria-valuenow={value ? value.toFixed(1) : colors.percentage}
+        aria-valuemin={0}
+        aria-valuemax={maxValue}
       >
         <div
           className={`${colors.bar} h-2 rounded-full transition-all duration-500`}
@@ -75,7 +85,10 @@ export const QualityIndicator = React.memo(function QualityIndicator({
         />
       </div>
       {value && (
-        <div className={`text-xs mt-1 ${colors.text}`}>
+        <div
+          className={`text-xs mt-1 ${colors.text}`}
+          aria-label="quality value"
+        >
           {value.toFixed(1)} / {maxValue}
         </div>
       )}

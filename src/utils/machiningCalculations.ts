@@ -1,3 +1,5 @@
+import { validateMaterial, generateRecommendations } from "./sharedUtils";
+
 // Machining Operations Calculations
 
 export interface MachiningMaterialProperties {
@@ -16,98 +18,99 @@ export interface MachiningMaterialProperties {
   };
 }
 
-export const MACHINING_MATERIALS: Record<string, MachiningMaterialProperties> = {
-  'steel-mild': {
-    name: 'Mild Steel (AISI 1018)',
-    hardness: 126,
-    tensileStrength: 440,
-    thermalConductivity: 51.9,
-    specificHeat: 486,
-    density: 7850,
-    machinabilityRating: 70,
-    recommendedSpeed: {
-      hss: 25,
-      carbide: 150,
-      ceramic: 300,
-      diamond: 500
-    }
-  },
-  'steel-medium': {
-    name: 'Medium Carbon Steel (AISI 1045)',
-    hardness: 170,
-    tensileStrength: 625,
-    thermalConductivity: 49.8,
-    specificHeat: 486,
-    density: 7850,
-    machinabilityRating: 55,
-    recommendedSpeed: {
-      hss: 20,
-      carbide: 120,
-      ceramic: 250,
-      diamond: 400
-    }
-  },
-  'stainless-304': {
-    name: 'Stainless Steel 304',
-    hardness: 201,
-    tensileStrength: 620,
-    thermalConductivity: 16.2,
-    specificHeat: 500,
-    density: 8000,
-    machinabilityRating: 45,
-    recommendedSpeed: {
-      hss: 15,
-      carbide: 100,
-      ceramic: 200,
-      diamond: 350
-    }
-  },
-  'aluminum-6061': {
-    name: 'Aluminum 6061-T6',
-    hardness: 95,
-    tensileStrength: 310,
-    thermalConductivity: 167,
-    specificHeat: 896,
-    density: 2700,
-    machinabilityRating: 90,
-    recommendedSpeed: {
-      hss: 100,
-      carbide: 400,
-      ceramic: 800,
-      diamond: 1200
-    }
-  },
-  'copper-c110': {
-    name: 'Copper C110',
-    hardness: 40,
-    tensileStrength: 220,
-    thermalConductivity: 391,
-    specificHeat: 385,
-    density: 8960,
-    machinabilityRating: 85,
-    recommendedSpeed: {
-      hss: 80,
-      carbide: 300,
-      ceramic: 600,
-      diamond: 1000
-    }
-  },
-  'titanium-ti6al4v': {
-    name: 'Titanium Ti-6Al-4V',
-    hardness: 334,
-    tensileStrength: 1170,
-    thermalConductivity: 6.7,
-    specificHeat: 526,
-    density: 4430,
-    machinabilityRating: 25,
-    recommendedSpeed: {
-      hss: 8,
-      carbide: 60,
-      ceramic: 150,
-      diamond: 250
-    }
-  }
-};
+export const MACHINING_MATERIALS: Record<string, MachiningMaterialProperties> =
+  {
+    "steel-mild": {
+      name: "Mild Steel (AISI 1018)",
+      hardness: 126,
+      tensileStrength: 440,
+      thermalConductivity: 51.9,
+      specificHeat: 486,
+      density: 7850,
+      machinabilityRating: 70,
+      recommendedSpeed: {
+        hss: 25,
+        carbide: 150,
+        ceramic: 300,
+        diamond: 500,
+      },
+    },
+    "steel-medium": {
+      name: "Medium Carbon Steel (AISI 1045)",
+      hardness: 170,
+      tensileStrength: 625,
+      thermalConductivity: 49.8,
+      specificHeat: 486,
+      density: 7850,
+      machinabilityRating: 55,
+      recommendedSpeed: {
+        hss: 20,
+        carbide: 120,
+        ceramic: 250,
+        diamond: 400,
+      },
+    },
+    "stainless-304": {
+      name: "Stainless Steel 304",
+      hardness: 201,
+      tensileStrength: 620,
+      thermalConductivity: 16.2,
+      specificHeat: 500,
+      density: 8000,
+      machinabilityRating: 45,
+      recommendedSpeed: {
+        hss: 15,
+        carbide: 100,
+        ceramic: 200,
+        diamond: 350,
+      },
+    },
+    "aluminum-6061": {
+      name: "Aluminum 6061-T6",
+      hardness: 95,
+      tensileStrength: 310,
+      thermalConductivity: 167,
+      specificHeat: 896,
+      density: 2700,
+      machinabilityRating: 90,
+      recommendedSpeed: {
+        hss: 100,
+        carbide: 400,
+        ceramic: 800,
+        diamond: 1200,
+      },
+    },
+    "copper-c110": {
+      name: "Copper C110",
+      hardness: 40,
+      tensileStrength: 220,
+      thermalConductivity: 391,
+      specificHeat: 385,
+      density: 8960,
+      machinabilityRating: 85,
+      recommendedSpeed: {
+        hss: 80,
+        carbide: 300,
+        ceramic: 600,
+        diamond: 1000,
+      },
+    },
+    "titanium-ti6al4v": {
+      name: "Titanium Ti-6Al-4V",
+      hardness: 334,
+      tensileStrength: 1170,
+      thermalConductivity: 6.7,
+      specificHeat: 526,
+      density: 4430,
+      machinabilityRating: 25,
+      recommendedSpeed: {
+        hss: 8,
+        carbide: 60,
+        ceramic: 150,
+        diamond: 250,
+      },
+    },
+  };
 
 // Turning Operations
 export interface TurningParameters {
@@ -117,7 +120,7 @@ export interface TurningParameters {
   cuttingSpeed: number; // m/min
   feedRate: number; // mm/rev
   depthOfCut: number; // mm
-  toolMaterial: 'hss' | 'carbide' | 'ceramic' | 'diamond';
+  toolMaterial: "hss" | "carbide" | "ceramic" | "diamond";
   coolant: boolean;
 }
 
@@ -134,16 +137,15 @@ export interface TurningResults {
 }
 
 export function calculateTurning(params: TurningParameters): TurningResults {
-  const material = MACHINING_MATERIALS[params.material];
-  if (!material) {
-    throw new Error('Material not found');
-  }
+  const material = validateMaterial(MACHINING_MATERIALS, params.material);
 
   // Spindle speed calculation
-  const spindleSpeed = (params.cuttingSpeed * 1000) / (Math.PI * params.diameter);
+  const spindleSpeed =
+    (params.cuttingSpeed * 1000) / (Math.PI * params.diameter);
 
   // Material removal rate
-  const materialRemovalRate = (params.cuttingSpeed * params.feedRate * params.depthOfCut) / 10; // cm³/min
+  const materialRemovalRate =
+    (params.cuttingSpeed * params.feedRate * params.depthOfCut) / 10; // cm³/min
 
   // Cutting force estimation (simplified model)
   const specificCuttingForce = material.tensileStrength * 2.5; // N/mm²
@@ -161,23 +163,57 @@ export function calculateTurning(params: TurningParameters): TurningResults {
 
   // Tool life calculation (Taylor's equation: VT^n = C)
   const taylorExponent = getToolLifeExponent(params.toolMaterial);
-  const taylorConstant = getToolLifeConstant(params.toolMaterial, material.machinabilityRating);
-  const toolLife = Math.pow(taylorConstant / params.cuttingSpeed, 1 / taylorExponent);
+  const taylorConstant = getToolLifeConstant(
+    params.toolMaterial,
+    material.machinabilityRating
+  );
+  const toolLife = Math.pow(
+    taylorConstant / params.cuttingSpeed,
+    1 / taylorExponent
+  );
 
   // Cost calculation
   const toolCost = getToolCost(params.toolMaterial);
   const machineCostPerMin = 1.5; // $/min
   const laborCostPerMin = 0.8; // $/min
-  const costPerPart = (machiningTime * (machineCostPerMin + laborCostPerMin)) + 
-                     (toolCost * machiningTime / toolLife);
+  const costPerPart =
+    machiningTime * (machineCostPerMin + laborCostPerMin) +
+    (toolCost * machiningTime) / toolLife;
 
-  // Recommendations
-  const recommendations = generateTurningRecommendations(params, material, {
-    spindleSpeed,
-    toolLife,
-    surfaceRoughness,
-    cuttingPower
-  });
+  const recommendations = generateRecommendations(
+    [
+      {
+        condition:
+          params.cuttingSpeed >
+          material.recommendedSpeed[params.toolMaterial] * 1.2,
+        message: "Consider reducing cutting speed to extend tool life",
+      },
+      {
+        condition:
+          params.cuttingSpeed <
+          material.recommendedSpeed[params.toolMaterial] * 0.8,
+        message: "Cutting speed can be increased for higher productivity",
+      },
+      {
+        condition: params.feedRate > 0.5,
+        message: "High feed rate may cause poor surface finish",
+      },
+      {
+        condition: toolLife < 30,
+        message:
+          "Tool life is low - consider using coolant or reducing cutting parameters",
+      },
+      {
+        condition: cuttingPower > 10,
+        message: "High power consumption - check machine capability",
+      },
+      {
+        condition: !params.coolant && material.machinabilityRating < 60,
+        message: "Use coolant to improve tool life and surface finish",
+      },
+    ],
+    "Turning parameters are optimized for this material"
+  );
 
   return {
     spindleSpeed: Math.round(spindleSpeed),
@@ -188,7 +224,7 @@ export function calculateTurning(params: TurningParameters): TurningResults {
     surfaceRoughness: Number(surfaceRoughness.toFixed(2)),
     toolLife: Math.round(toolLife),
     costPerPart: Number(costPerPart.toFixed(2)),
-    recommendations
+    recommendations,
   };
 }
 
@@ -202,7 +238,7 @@ export interface MillingParameters {
   numberOfTeeth: number;
   spindleSpeed: number; // RPM
   feedRate: number; // mm/min
-  toolMaterial: 'hss' | 'carbide' | 'ceramic' | 'diamond';
+  toolMaterial: "hss" | "carbide" | "ceramic" | "diamond";
 }
 
 export interface MillingResults {
@@ -218,28 +254,34 @@ export interface MillingResults {
 }
 
 export function calculateMilling(params: MillingParameters): MillingResults {
-  const material = MACHINING_MATERIALS[params.material];
-  if (!material) {
-    throw new Error('Material not found');
-  }
+  const material = validateMaterial(MACHINING_MATERIALS, params.material);
 
   // Cutting speed
-  const cuttingSpeed = (Math.PI * params.cutterDiameter * params.spindleSpeed) / 1000; // m/min
+  const cuttingSpeed =
+    (Math.PI * params.cutterDiameter * params.spindleSpeed) / 1000; // m/min
 
   // Feed per tooth
-  const feedPerTooth = params.feedRate / (params.spindleSpeed * params.numberOfTeeth);
+  const feedPerTooth =
+    params.feedRate / (params.spindleSpeed * params.numberOfTeeth);
 
   // Material removal rate
-  const materialRemovalRate = (params.width * params.depth * params.feedRate) / 1000; // cm³/min
+  const materialRemovalRate =
+    (params.width * params.depth * params.feedRate) / 1000; // cm³/min
 
   // Power calculation (simplified)
   const specificCuttingForce = material.tensileStrength * 3.0; // N/mm²
   const averageChipThickness = feedPerTooth * Math.sin(Math.PI / 4); // Simplified
-  const cuttingForce = specificCuttingForce * params.width * averageChipThickness * params.numberOfTeeth;
+  const cuttingForce =
+    specificCuttingForce *
+    params.width *
+    averageChipThickness *
+    params.numberOfTeeth;
   const cuttingPower = (cuttingForce * cuttingSpeed) / 60000; // kW
 
   // Machining time
-  const numberOfPasses = Math.ceil(params.length / (params.cutterDiameter * 0.8));
+  const numberOfPasses = Math.ceil(
+    params.length / (params.cutterDiameter * 0.8)
+  );
   const machiningTime = (params.length * numberOfPasses) / params.feedRate;
 
   // Surface roughness
@@ -247,23 +289,50 @@ export function calculateMilling(params: MillingParameters): MillingResults {
 
   // Tool life
   const taylorExponent = getToolLifeExponent(params.toolMaterial);
-  const taylorConstant = getToolLifeConstant(params.toolMaterial, material.machinabilityRating) * 0.8; // Milling factor
+  const taylorConstant =
+    getToolLifeConstant(params.toolMaterial, material.machinabilityRating) *
+    0.8; // Milling factor
   const toolLife = Math.pow(taylorConstant / cuttingSpeed, 1 / taylorExponent);
 
   // Cost calculation
   const toolCost = getToolCost(params.toolMaterial) * 1.5; // Milling tools are more expensive
   const machineCostPerMin = 2.0; // $/min
   const laborCostPerMin = 0.8; // $/min
-  const costPerPart = (machiningTime * (machineCostPerMin + laborCostPerMin)) + 
-                     (toolCost * machiningTime / toolLife);
+  const costPerPart =
+    machiningTime * (machineCostPerMin + laborCostPerMin) +
+    (toolCost * machiningTime) / toolLife;
 
-  // Recommendations
-  const recommendations = generateMillingRecommendations(params, material, {
-    cuttingSpeed,
-    feedPerTooth,
-    toolLife,
-    cuttingPower
-  });
+  const recommendations = generateRecommendations(
+    [
+      {
+        condition: feedPerTooth > 0.3,
+        message: "Feed per tooth is high - may cause tool breakage",
+      },
+      {
+        condition: feedPerTooth < 0.05,
+        message: "Feed per tooth is low - may cause work hardening",
+      },
+      {
+        condition:
+          cuttingSpeed > material.recommendedSpeed[params.toolMaterial] * 1.2,
+        message: "Consider reducing spindle speed to extend tool life",
+      },
+      {
+        condition: params.numberOfTeeth < 3,
+        message:
+          "Consider using end mill with more teeth for better surface finish",
+      },
+      {
+        condition: toolLife < 60,
+        message: "Tool life is low - optimize cutting parameters",
+      },
+      {
+        condition: params.depth > params.cutterDiameter * 0.5,
+        message: "Deep cuts may cause chatter - consider multiple passes",
+      },
+    ],
+    "Milling parameters are well optimized"
+  );
 
   return {
     cuttingSpeed: Number(cuttingSpeed.toFixed(1)),
@@ -274,7 +343,7 @@ export function calculateMilling(params: MillingParameters): MillingResults {
     surfaceRoughness: Number(surfaceRoughness.toFixed(2)),
     toolLife: Math.round(toolLife),
     costPerPart: Number(costPerPart.toFixed(2)),
-    recommendations
+    recommendations,
   };
 }
 
@@ -285,7 +354,7 @@ export interface DrillingParameters {
   holeDepth: number; // mm
   drillSpeed: number; // RPM
   feedRate: number; // mm/rev
-  toolMaterial: 'hss' | 'carbide' | 'ceramic' | 'diamond';
+  toolMaterial: "hss" | "carbide" | "ceramic" | "diamond";
   coolant: boolean;
 }
 
@@ -302,25 +371,25 @@ export interface DrillingResults {
 }
 
 export function calculateDrilling(params: DrillingParameters): DrillingResults {
-  const material = MACHINING_MATERIALS[params.material];
-  if (!material) {
-    throw new Error('Material not found');
-  }
+  const material = validateMaterial(MACHINING_MATERIALS, params.material);
 
   // Cutting speed
-  const cuttingSpeed = (Math.PI * params.holeDiameter * params.drillSpeed) / 1000; // m/min
+  const cuttingSpeed =
+    (Math.PI * params.holeDiameter * params.drillSpeed) / 1000; // m/min
 
   // Material removal rate
   const holeArea = Math.PI * Math.pow(params.holeDiameter / 2, 2); // mm²
-  const materialRemovalRate = (holeArea * params.feedRate * params.drillSpeed) / 60000; // cm³/min
+  const materialRemovalRate =
+    (holeArea * params.feedRate * params.drillSpeed) / 60000; // cm³/min
 
   // Thrust force calculation
   const specificThrustForce = material.tensileStrength * 0.8; // N/mm²
-  const thrustForce = specificThrustForce * holeArea / 1000; // N
+  const thrustForce = (specificThrustForce * holeArea) / 1000; // N
 
   // Torque calculation
   const specificTorque = material.tensileStrength * 0.3; // Nm/mm²
-  const torque = specificTorque * Math.pow(params.holeDiameter / 2, 2) * Math.PI / 1000; // Nm
+  const torque =
+    (specificTorque * Math.pow(params.holeDiameter / 2, 2) * Math.PI) / 1000; // Nm
 
   // Drilling time
   const drillingTime = params.holeDepth / (params.feedRate * params.drillSpeed);
@@ -331,7 +400,8 @@ export function calculateDrilling(params: DrillingParameters): DrillingResults {
   // Tool life (in number of holes)
   const baseToolLife = getBaseToolLife(params.toolMaterial);
   const materialFactor = material.machinabilityRating / 100;
-  const speedFactor = material.recommendedSpeed[params.toolMaterial] / cuttingSpeed;
+  const speedFactor =
+    material.recommendedSpeed[params.toolMaterial] / cuttingSpeed;
   const coolantFactor = params.coolant ? 1.5 : 1.0;
   const toolLife = baseToolLife * materialFactor * speedFactor * coolantFactor;
 
@@ -339,16 +409,40 @@ export function calculateDrilling(params: DrillingParameters): DrillingResults {
   const toolCost = getToolCost(params.toolMaterial) * 0.5; // Drills are less expensive
   const machineCostPerMin = 1.2; // $/min
   const laborCostPerMin = 0.8; // $/min
-  const costPerHole = (drillingTime * (machineCostPerMin + laborCostPerMin)) + 
-                     (toolCost / toolLife);
+  const costPerHole =
+    drillingTime * (machineCostPerMin + laborCostPerMin) + toolCost / toolLife;
 
-  // Recommendations
-  const recommendations = generateDrillingRecommendations(params, material, {
-    cuttingSpeed,
-    thrustForce,
-    toolLife,
-    power
-  });
+  const recommendations = generateRecommendations(
+    [
+      {
+        condition: params.feedRate > params.holeDiameter * 0.1,
+        message:
+          "Feed rate is high for this hole diameter - may cause drill breakage",
+      },
+      {
+        condition:
+          cuttingSpeed > material.recommendedSpeed[params.toolMaterial] * 1.2,
+        message: "Drill speed is high - consider reducing to extend tool life",
+      },
+      {
+        condition: params.holeDepth > params.holeDiameter * 5,
+        message: "Deep hole drilling - use peck drilling cycle and coolant",
+      },
+      {
+        condition: !params.coolant && material.machinabilityRating < 70,
+        message: "Use coolant for better chip evacuation and tool life",
+      },
+      {
+        condition: toolLife < 20,
+        message: "Tool life is very low - check drill condition and parameters",
+      },
+      {
+        condition: thrustForce > 1000,
+        message: "High thrust force - ensure adequate workholding",
+      },
+    ],
+    "Drilling parameters are appropriate for this application"
+  );
 
   return {
     cuttingSpeed: Number(cuttingSpeed.toFixed(1)),
@@ -359,9 +453,12 @@ export function calculateDrilling(params: DrillingParameters): DrillingResults {
     toolLife: Math.round(toolLife),
     power: Number(power.toFixed(2)),
     costPerHole: Number(costPerHole.toFixed(3)),
-    recommendations
+    recommendations,
   };
 }
+
+// Types for recommendation results
+// Remove unused recommendation result interfaces
 
 // Helper functions
 function getToolLifeExponent(toolMaterial: string): number {
@@ -369,19 +466,23 @@ function getToolLifeExponent(toolMaterial: string): number {
     hss: 0.125,
     carbide: 0.2,
     ceramic: 0.3,
-    diamond: 0.4
+    diamond: 0.4,
   };
   return exponents[toolMaterial as keyof typeof exponents] || 0.125;
 }
 
-function getToolLifeConstant(toolMaterial: string, machinabilityRating: number): number {
+function getToolLifeConstant(
+  toolMaterial: string,
+  machinabilityRating: number
+): number {
   const baseConstants = {
     hss: 30,
     carbide: 200,
     ceramic: 500,
-    diamond: 1000
+    diamond: 1000,
   };
-  const baseConstant = baseConstants[toolMaterial as keyof typeof baseConstants] || 30;
+  const baseConstant =
+    baseConstants[toolMaterial as keyof typeof baseConstants] || 30;
   return baseConstant * (machinabilityRating / 100);
 }
 
@@ -390,7 +491,7 @@ function getToolCost(toolMaterial: string): number {
     hss: 5,
     carbide: 25,
     ceramic: 50,
-    diamond: 200
+    diamond: 200,
   };
   return costs[toolMaterial as keyof typeof costs] || 5;
 }
@@ -400,119 +501,7 @@ function getBaseToolLife(toolMaterial: string): number {
     hss: 50,
     carbide: 200,
     ceramic: 500,
-    diamond: 1000
+    diamond: 1000,
   };
   return baseLife[toolMaterial as keyof typeof baseLife] || 50;
-}
-
-function generateTurningRecommendations(
-  params: TurningParameters, 
-  material: MachiningMaterialProperties,
-  results: any
-): string[] {
-  const recommendations: string[] = [];
-  
-  const recommendedSpeed = material.recommendedSpeed[params.toolMaterial];
-  
-  if (params.cuttingSpeed > recommendedSpeed * 1.2) {
-    recommendations.push('Consider reducing cutting speed to extend tool life');
-  } else if (params.cuttingSpeed < recommendedSpeed * 0.8) {
-    recommendations.push('Cutting speed can be increased for higher productivity');
-  }
-  
-  if (params.feedRate > 0.5) {
-    recommendations.push('High feed rate may cause poor surface finish');
-  }
-  
-  if (results.toolLife < 30) {
-    recommendations.push('Tool life is low - consider using coolant or reducing cutting parameters');
-  }
-  
-  if (results.cuttingPower > 10) {
-    recommendations.push('High power consumption - check machine capability');
-  }
-  
-  if (!params.coolant && material.machinabilityRating < 60) {
-    recommendations.push('Use coolant to improve tool life and surface finish');
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push('Turning parameters are optimized for this material');
-  }
-
-  return recommendations;
-}
-
-function generateMillingRecommendations(
-  params: MillingParameters, 
-  material: MachiningMaterialProperties,
-  results: any
-): string[] {
-  const recommendations: string[] = [];
-  
-  if (results.feedPerTooth > 0.3) {
-    recommendations.push('Feed per tooth is high - may cause tool breakage');
-  } else if (results.feedPerTooth < 0.05) {
-    recommendations.push('Feed per tooth is low - may cause work hardening');
-  }
-  
-  if (results.cuttingSpeed > material.recommendedSpeed[params.toolMaterial] * 1.2) {
-    recommendations.push('Consider reducing spindle speed to extend tool life');
-  }
-  
-  if (params.numberOfTeeth < 3) {
-    recommendations.push('Consider using end mill with more teeth for better surface finish');
-  }
-  
-  if (results.toolLife < 60) {
-    recommendations.push('Tool life is low - optimize cutting parameters');
-  }
-  
-  if (params.depth > params.cutterDiameter * 0.5) {
-    recommendations.push('Deep cuts may cause chatter - consider multiple passes');
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push('Milling parameters are well optimized');
-  }
-
-  return recommendations;
-}
-
-function generateDrillingRecommendations(
-  params: DrillingParameters, 
-  material: MachiningMaterialProperties,
-  results: any
-): string[] {
-  const recommendations: string[] = [];
-  
-  if (params.feedRate > params.holeDiameter * 0.1) {
-    recommendations.push('Feed rate is high for this hole diameter - may cause drill breakage');
-  }
-  
-  if (results.cuttingSpeed > material.recommendedSpeed[params.toolMaterial] * 1.2) {
-    recommendations.push('Drill speed is high - consider reducing to extend tool life');
-  }
-  
-  if (params.holeDepth > params.holeDiameter * 5) {
-    recommendations.push('Deep hole drilling - use peck drilling cycle and coolant');
-  }
-  
-  if (!params.coolant && material.machinabilityRating < 70) {
-    recommendations.push('Use coolant for better chip evacuation and tool life');
-  }
-  
-  if (results.toolLife < 20) {
-    recommendations.push('Tool life is very low - check drill condition and parameters');
-  }
-  
-  if (results.thrustForce > 1000) {
-    recommendations.push('High thrust force - ensure adequate workholding');
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push('Drilling parameters are appropriate for this application');
-  }
-
-  return recommendations;
 }

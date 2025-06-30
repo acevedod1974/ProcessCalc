@@ -1,10 +1,48 @@
 // Manufacturing Process Calculations Utilities
 
-export interface MaterialProperties {
+// Unified base interface for all material properties
+export interface BaseMaterialProperties {
   name: string;
-  density: number; // kg/m³
-  yieldStrength: number; // MPa
-  ultimateStrength: number; // MPa
+  density: number;
+}
+
+// Extend for each process as needed
+export interface DrawingMaterialProperties extends BaseMaterialProperties {
+  yieldStrength: number;
+  ultimateStrength: number;
+  reductionLimit: number;
+  frictionCoefficient: number;
+  workHardeningExponent: number;
+  flowStressCoefficient: number;
+}
+
+export interface MachiningMaterialProperties extends BaseMaterialProperties {
+  hardness: number;
+  tensileStrength: number;
+  thermalConductivity: number;
+  specificHeat: number;
+  machinabilityRating: number;
+  recommendedSpeed: {
+    hss: number;
+    carbide: number;
+    ceramic: number;
+    diamond: number;
+  };
+}
+
+export interface CuttingMaterialProperties extends BaseMaterialProperties {
+  shearStrength: number;
+  tensileStrength: number;
+  hardness: number;
+  thermalConductivity: number;
+  specificHeat: number;
+  workHardeningExponent: number;
+  frictionCoefficient: number;
+}
+
+export interface MaterialProperties extends BaseMaterialProperties {
+  yieldStrength: number;
+  ultimateStrength: number;
   youngsModulus: number; // GPa
   poissonRatio: number;
   thermalConductivity: number; // W/m·K
@@ -14,8 +52,8 @@ export interface MaterialProperties {
 }
 
 export const MATERIALS: Record<string, MaterialProperties> = {
-  'steel-low-carbon': {
-    name: 'Steel (Low Carbon)',
+  "steel-low-carbon": {
+    name: "Steel (Low Carbon)",
     density: 7850,
     yieldStrength: 250,
     ultimateStrength: 400,
@@ -24,10 +62,10 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 50,
     specificHeat: 460,
     flowStressCoefficient: 530,
-    strainHardeningExponent: 0.26
+    strainHardeningExponent: 0.26,
   },
-  'steel-medium-carbon': {
-    name: 'Steel (Medium Carbon)',
+  "steel-medium-carbon": {
+    name: "Steel (Medium Carbon)",
     density: 7850,
     yieldStrength: 350,
     ultimateStrength: 550,
@@ -36,10 +74,10 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 48,
     specificHeat: 460,
     flowStressCoefficient: 700,
-    strainHardeningExponent: 0.23
+    strainHardeningExponent: 0.23,
   },
-  'aluminum-6061': {
-    name: 'Aluminum 6061',
+  "aluminum-6061": {
+    name: "Aluminum 6061",
     density: 2700,
     yieldStrength: 276,
     ultimateStrength: 310,
@@ -48,10 +86,10 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 167,
     specificHeat: 896,
     flowStressCoefficient: 350,
-    strainHardeningExponent: 0.20
+    strainHardeningExponent: 0.2,
   },
-  'copper': {
-    name: 'Copper',
+  copper: {
+    name: "Copper",
     density: 8960,
     yieldStrength: 70,
     ultimateStrength: 220,
@@ -60,8 +98,8 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 401,
     specificHeat: 385,
     flowStressCoefficient: 315,
-    strainHardeningExponent: 0.54
-  }
+    strainHardeningExponent: 0.54,
+  },
 };
 
 export interface RollingParameters {
@@ -92,36 +130,40 @@ export interface RollingResults {
 export function calculateRolling(params: RollingParameters): RollingResults {
   const material = MATERIALS[params.material];
   if (!material) {
-    throw new Error('Material not found');
+    throw new Error("Material not found");
   }
 
   // Basic calculations
   const reduction = params.initialThickness - params.finalThickness;
   const reductionRatio = (reduction / params.initialThickness) * 100;
   const trueStrain = Math.log(params.initialThickness / params.finalThickness);
-  
+
   // Contact geometry
   const contactLength = Math.sqrt(reduction * (params.rollDiameter / 2));
   const contactAngle = Math.sqrt(reduction / (params.rollDiameter / 2));
-  
+
   // Flow stress calculation (simplified)
-  const averageFlowStress = material.flowStressCoefficient * Math.pow(trueStrain, material.strainHardeningExponent);
-  
+  const averageFlowStress =
+    material.flowStressCoefficient *
+    Math.pow(trueStrain, material.strainHardeningExponent);
+
   // Rolling force calculation (Hitchcock's formula)
   const rollingForce = averageFlowStress * params.width * contactLength * 1000; // Convert to N
-  
+
   // Power calculation
-  const rollCircumference = Math.PI * params.rollDiameter / 1000; // Convert to m
+  const rollCircumference = (Math.PI * params.rollDiameter) / 1000; // Convert to m
   const rollRPM = params.rollingSpeed / rollCircumference;
   const rollAngularVelocity = (rollRPM * 2 * Math.PI) / 60;
-  const torque = rollingForce * contactLength / 2000; // Nm
-  const rollingPower = torque * rollAngularVelocity / 1000; // kW
-  
+  const torque = (rollingForce * contactLength) / 2000; // Nm
+  const rollingPower = (torque * rollAngularVelocity) / 1000; // kW
+
   // Additional calculations
   const separatingForce = rollingForce * Math.sin(contactAngle);
   const rollPressure = rollingForce / (params.width * contactLength); // MPa
-  const exitVelocity = params.rollingSpeed * (params.initialThickness / params.finalThickness);
-  const forwardSlip = ((exitVelocity - params.rollingSpeed) / params.rollingSpeed) * 100;
+  const exitVelocity =
+    params.rollingSpeed * (params.initialThickness / params.finalThickness);
+  const forwardSlip =
+    ((exitVelocity - params.rollingSpeed) / params.rollingSpeed) * 100;
 
   return {
     reductionRatio,
@@ -134,7 +176,7 @@ export function calculateRolling(params: RollingParameters): RollingResults {
     separatingForce,
     rollPressure,
     exitVelocity,
-    forwardSlip
+    forwardSlip,
   };
 }
 
@@ -145,7 +187,7 @@ export interface ForgingParameters {
   diameter: number;
   frictionCoefficient: number;
   temperature?: number;
-  dieType: 'flat' | 'grooved';
+  dieType: "flat" | "grooved";
 }
 
 export interface ForgingResults {
@@ -161,29 +203,36 @@ export interface ForgingResults {
 export function calculateForging(params: ForgingParameters): ForgingResults {
   const material = MATERIALS[params.material];
   if (!material) {
-    throw new Error('Material not found');
+    throw new Error("Material not found");
   }
 
   const reduction = params.initialHeight - params.finalHeight;
   const reductionRatio = (reduction / params.initialHeight) * 100;
   const trueStrain = Math.log(params.initialHeight / params.finalHeight);
-  
+
   // Flow stress calculation
-  const averageFlowStress = material.flowStressCoefficient * Math.pow(trueStrain, material.strainHardeningExponent);
-  
+  const averageFlowStress =
+    material.flowStressCoefficient *
+    Math.pow(trueStrain, material.strainHardeningExponent);
+
   // Area calculation
   const area = Math.PI * Math.pow(params.diameter / 2, 2);
-  
+
   // Friction factor
-  const frictionFactor = params.dieType === 'flat' ? 
-    1 + (params.frictionCoefficient * params.diameter) / (3 * params.finalHeight) :
-    1 + (params.frictionCoefficient * params.diameter) / (4 * params.finalHeight);
-  
+  const frictionFactor =
+    params.dieType === "flat"
+      ? 1 +
+        (params.frictionCoefficient * params.diameter) /
+          (3 * params.finalHeight)
+      : 1 +
+        (params.frictionCoefficient * params.diameter) /
+          (4 * params.finalHeight);
+
   // Forging force
   const forgingForce = averageFlowStress * area * frictionFactor * 1000; // Convert to N
-  
+
   // Work and power calculations
-  const workDone = forgingForce * reduction / 1000; // kJ
+  const workDone = (forgingForce * reduction) / 1000; // kJ
   const forgingPower = workDone; // Assuming 1 second operation for simplicity
   const efficiency = 0.85; // Typical forging efficiency
 
@@ -194,42 +243,42 @@ export function calculateForging(params: ForgingParameters): ForgingResults {
     forgingForce,
     forgingPower,
     workDone,
-    efficiency
+    efficiency,
   };
 }
 
 // Unit conversion utilities
 export function convertLength(value: number, from: string, to: string): number {
   const conversions: Record<string, number> = {
-    'mm': 1,
-    'cm': 10,
-    'm': 1000,
-    'in': 25.4,
-    'ft': 304.8
+    mm: 1,
+    cm: 10,
+    m: 1000,
+    in: 25.4,
+    ft: 304.8,
   };
-  
+
   return (value * conversions[from]) / conversions[to];
 }
 
 export function convertForce(value: number, from: string, to: string): number {
   const conversions: Record<string, number> = {
-    'N': 1,
-    'kN': 1000,
-    'MN': 1000000,
-    'lbf': 4.448,
-    'kip': 4448
+    N: 1,
+    kN: 1000,
+    MN: 1000000,
+    lbf: 4.448,
+    kip: 4448,
   };
-  
+
   return (value * conversions[from]) / conversions[to];
 }
 
 export function convertPower(value: number, from: string, to: string): number {
   const conversions: Record<string, number> = {
-    'W': 1,
-    'kW': 1000,
-    'MW': 1000000,
-    'hp': 745.7
+    W: 1,
+    kW: 1000,
+    MW: 1000000,
+    hp: 745.7,
   };
-  
+
   return (value * conversions[from]) / conversions[to];
 }

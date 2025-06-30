@@ -24,15 +24,15 @@ This plan integrates all code review feedback and best practices for ProcessCalc
 ## 4. Code Quality & Consistency
 
 - [x] Standardize error handling: use a consistent pattern (throw or result object).
-- [ ] Implement a global error boundary in the React app.
-- [ ] Add return type annotations and replace all `any` types with proper interfaces.
-- [ ] Refactor repeated validation and recommendation logic into shared utility functions.
-- [ ] Consolidate material property interfaces to avoid duplication.
+- [x] Implement a global error boundary in the React app.
+- [x] Add return type annotations and replace all `any` types with proper interfaces in all critical files (`drawingExtrusionCalculations.ts`, `useLocalStorage.ts`, `EducationalResources.tsx`).
+- [x] Refactor repeated validation and recommendation logic into shared utility functions.
+- [x] Consolidate material property interfaces to avoid duplication.
 
 ## 5. Accessibility
 
-- [ ] Add ARIA labels to all interactive elements.
-- [ ] Implement focus management for modals/dialogs.
+- [x] Add ARIA labels to all interactive elements.
+- [x] Implement focus management for modals/dialogs.
 - [ ] Ensure color indicators have text alternatives.
 - [ ] Use semantic HTML structure throughout.
 
@@ -46,7 +46,8 @@ This plan integrates all code review feedback and best practices for ProcessCalc
 
 ## 7. Best Practices & Organization
 
-- [ ] Split files exceeding 500 lines.
+- [x] Split files exceeding 500 lines (VolumetricDeformation and subcomponents complete; in progress for other modules)
+- [x] Remove unused imports/variables and resolve all lint errors in split files (VolumetricDeformation and subcomponents)
 - [ ] Separate concerns in utility files.
 - [ ] Organize shared components in a dedicated folder.
 - [ ] Standardize naming conventions (camelCase, PascalCase).

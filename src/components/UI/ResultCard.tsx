@@ -44,6 +44,9 @@ export const ResultCard = React.memo(function ResultCard({
       className={`p-4 rounded-lg transition-all duration-200 hover:scale-105 ${
         isDark ? "bg-slate-700" : "bg-gray-50"
       }`}
+      role="region"
+      aria-label={title}
+      tabIndex={0}
     >
       <div
         className={`text-sm font-medium mb-1 ${
@@ -56,6 +59,7 @@ export const ResultCard = React.memo(function ResultCard({
         className={`text-2xl font-bold ${
           isDark ? "text-white" : "text-gray-900"
         }`}
+        aria-live="polite"
       >
         <span className={getTrendColor()}>{formatValue(value)}</span>
         {unit && (
@@ -63,6 +67,7 @@ export const ResultCard = React.memo(function ResultCard({
             className={`text-lg ml-1 ${
               isDark ? "text-slate-400" : "text-gray-500"
             }`}
+            aria-label={`unit: ${unit}`}
           >
             {unit}
           </span>
@@ -73,6 +78,7 @@ export const ResultCard = React.memo(function ResultCard({
           className={`text-xs mt-1 ${
             isDark ? "text-slate-500" : "text-gray-500"
           }`}
+          aria-label="description"
         >
           {description}
         </div>

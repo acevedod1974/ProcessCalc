@@ -1,3 +1,5 @@
+import { validateMaterial, generateRecommendations } from "./sharedUtils";
+
 // Drawing and Extrusion Process Calculations
 
 export interface DrawingMaterialProperties {
@@ -11,42 +13,42 @@ export interface DrawingMaterialProperties {
 }
 
 export const DRAWING_MATERIALS: Record<string, DrawingMaterialProperties> = {
-  'steel-low-carbon': {
-    name: 'Steel (Low Carbon)',
+  "steel-low-carbon": {
+    name: "Steel (Low Carbon)",
     yieldStrength: 250,
     ultimateStrength: 400,
     reductionLimit: 25,
     frictionCoefficient: 0.1,
     workHardeningExponent: 0.26,
-    flowStressCoefficient: 530
+    flowStressCoefficient: 530,
   },
-  'aluminum-1100': {
-    name: 'Aluminum 1100',
+  "aluminum-1100": {
+    name: "Aluminum 1100",
     yieldStrength: 90,
     ultimateStrength: 130,
     reductionLimit: 35,
     frictionCoefficient: 0.08,
-    workHardeningExponent: 0.20,
-    flowStressCoefficient: 180
+    workHardeningExponent: 0.2,
+    flowStressCoefficient: 180,
   },
-  'copper-c110': {
-    name: 'Copper C110',
+  "copper-c110": {
+    name: "Copper C110",
     yieldStrength: 70,
     ultimateStrength: 220,
     reductionLimit: 40,
     frictionCoefficient: 0.05,
     workHardeningExponent: 0.54,
-    flowStressCoefficient: 315
+    flowStressCoefficient: 315,
   },
-  'stainless-304': {
-    name: 'Stainless Steel 304',
+  "stainless-304": {
+    name: "Stainless Steel 304",
     yieldStrength: 290,
     ultimateStrength: 620,
     reductionLimit: 20,
     frictionCoefficient: 0.12,
     workHardeningExponent: 0.45,
-    flowStressCoefficient: 1275
-  }
+    flowStressCoefficient: 1275,
+  },
 };
 
 // Wire Drawing
@@ -74,11 +76,10 @@ export interface WireDrawingResults {
   recommendations: string[];
 }
 
-export function calculateWireDrawing(params: WireDrawingParameters): WireDrawingResults {
-  const material = DRAWING_MATERIALS[params.material];
-  if (!material) {
-    throw new Error('Material not found');
-  }
+export function calculateWireDrawing(
+  params: WireDrawingParameters
+): WireDrawingResults {
+  const material = validateMaterial(DRAWING_MATERIALS, params.material);
 
   // Basic calculations
   const initialArea = Math.PI * Math.pow(params.initialDiameter / 2, 2);
@@ -93,16 +94,18 @@ export function calculateWireDrawing(params: WireDrawingParameters): WireDrawing
 
   // Die angle factor
   const angleRadians = (params.dieAngle * Math.PI) / 180;
-  const angleFactor = (1 + Math.sin(angleRadians)) / (1 + Math.cos(angleRadians));
+  const angleFactor =
+    (1 + Math.sin(angleRadians)) / (1 + Math.cos(angleRadians));
 
   // Friction factor
-  const frictionFactor = params.lubrication ? 
-    material.frictionCoefficient * 0.5 : 
-    material.frictionCoefficient;
+  const frictionFactor = params.lubrication
+    ? material.frictionCoefficient * 0.5
+    : material.frictionCoefficient;
 
   // Drawing stress calculation
-  const drawingStress = adjustedYieldStrength * 
-    (1 + frictionFactor / Math.tan(angleRadians / 2)) * 
+  const drawingStress =
+    adjustedYieldStrength *
+    (1 + frictionFactor / Math.tan(angleRadians / 2)) *
     Math.log(initialArea / finalArea);
 
   // Drawing force
@@ -115,19 +118,52 @@ export function calculateWireDrawing(params: WireDrawingParameters): WireDrawing
   const dieStress = drawingStress * angleFactor;
 
   // Work done
-  const workDone = drawingForce * (params.initialDiameter - params.finalDiameter) / 1000; // kJ
+  const workDone =
+    (drawingForce * (params.initialDiameter - params.finalDiameter)) / 1000; // kJ
 
   // Efficiency
-  const idealWork = adjustedYieldStrength * finalArea * trueStrain / 1000;
+  const idealWork = (adjustedYieldStrength * finalArea * trueStrain) / 1000;
   const efficiency = Math.min((idealWork / workDone) * 100, 95);
 
   // Recommendations
-  const recommendations = generateDrawingRecommendations(params, material, {
-    reductionPerPass,
-    drawingStress,
-    dieStress,
-    efficiency
-  });
+  const recommendations = generateRecommendations(
+    [
+      {
+        condition: reductionPerPass > material.reductionLimit,
+        message: `Reduction per pass (${reductionPerPass.toFixed(
+          1
+        )}%) exceeds material limit (${
+          material.reductionLimit
+        }%) - increase number of passes`,
+      },
+      {
+        condition: params.dieAngle < 6,
+        message: "Die angle is very small - may cause excessive drawing force",
+      },
+      {
+        condition: params.dieAngle > 20,
+        message: "Die angle is large - may cause surface defects",
+      },
+      {
+        condition: !params.lubrication,
+        message:
+          "Use lubrication to reduce drawing force and improve surface quality",
+      },
+      {
+        condition: dieStress > material.ultimateStrength * 3,
+        message: "Die stress is high - consider using harder die material",
+      },
+      {
+        condition: efficiency < 70,
+        message: "Low efficiency - optimize die angle and lubrication",
+      },
+      {
+        condition: params.drawingSpeed > 100,
+        message: "High drawing speed may cause heating - monitor temperature",
+      },
+    ],
+    "Drawing parameters are well optimized for this material"
+  );
 
   return {
     reductionRatio: Number(reductionRatio.toFixed(2)),
@@ -139,7 +175,7 @@ export function calculateWireDrawing(params: WireDrawingParameters): WireDrawing
     dieStress: Number(dieStress.toFixed(1)),
     workDone: Number(workDone.toFixed(2)),
     efficiency: Number(efficiency.toFixed(1)),
-    recommendations
+    recommendations,
   };
 }
 
@@ -152,7 +188,7 @@ export interface ExtrusionParameters {
   extrusionSpeed: number; // mm/min
   dieAngle: number; // degrees
   temperature: number; // °C
-  extrusionType: 'direct' | 'indirect';
+  extrusionType: "direct" | "indirect";
   lubrication: boolean;
 }
 
@@ -168,11 +204,10 @@ export interface ExtrusionResults {
   recommendations: string[];
 }
 
-export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResults {
-  const material = DRAWING_MATERIALS[params.material];
-  if (!material) {
-    throw new Error('Material not found');
-  }
+export function calculateExtrusion(
+  params: ExtrusionParameters
+): ExtrusionResults {
+  const material = validateMaterial(DRAWING_MATERIALS, params.material);
 
   // Basic calculations
   const billetArea = Math.PI * Math.pow(params.billetDiameter / 2, 2);
@@ -192,13 +227,14 @@ export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResult
   const frictionEffect = 1 + frictionFactor * Math.log(extrusionRatio);
 
   // Extrusion type factor
-  const typeMultiplier = params.extrusionType === 'direct' ? 1.0 : 0.8;
+  const typeMultiplier = params.extrusionType === "direct" ? 1.0 : 0.8;
 
   // Extrusion pressure calculation
-  const extrusionPressure = adjustedFlowStress * 
-    Math.log(extrusionRatio) * 
-    angleFactor * 
-    frictionEffect * 
+  const extrusionPressure =
+    adjustedFlowStress *
+    Math.log(extrusionRatio) *
+    angleFactor *
+    frictionEffect *
     typeMultiplier;
 
   // Extrusion force
@@ -214,19 +250,48 @@ export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResult
   const materialFlow = params.extrusionSpeed * extrusionRatio;
 
   // Work done
-  const workDone = extrusionForce * params.billetLength / 1000000; // kJ
+  const workDone = (extrusionForce * params.billetLength) / 1000000; // kJ
 
   // Efficiency
-  const idealWork = adjustedFlowStress * billetArea * Math.log(extrusionRatio) / 1000;
+  const idealWork =
+    (adjustedFlowStress * billetArea * Math.log(extrusionRatio)) / 1000;
   const efficiency = Math.min((idealWork / workDone) * 100, 90);
 
   // Recommendations
-  const recommendations = generateExtrusionRecommendations(params, material, {
-    extrusionRatio,
-    extrusionPressure,
-    efficiency,
-    temperature: params.temperature
-  });
+  const recommendations = generateRecommendations(
+    [
+      {
+        condition: extrusionRatio > 50,
+        message:
+          "Very high extrusion ratio - consider multiple-stage extrusion",
+      },
+      {
+        condition: params.temperature < 200 && material.name.includes("Steel"),
+        message: "Consider hot extrusion for steel materials to reduce force",
+      },
+      {
+        condition: params.dieAngle > 90,
+        message: "Die angle is very large - may cause material flow issues",
+      },
+      {
+        condition: extrusionPressure > 1000,
+        message: "High extrusion pressure - ensure press capability",
+      },
+      {
+        condition: !params.lubrication && params.extrusionType === "direct",
+        message: "Use lubrication for direct extrusion to reduce friction",
+      },
+      {
+        condition: efficiency < 60,
+        message: "Low efficiency - optimize temperature and die design",
+      },
+      {
+        condition: params.extrusionSpeed > 50 && params.temperature < 300,
+        message: "High speed with low temperature may cause defects",
+      },
+    ],
+    "Extrusion parameters are optimized for this process"
+  );
 
   return {
     extrusionRatio: Number(extrusionRatio.toFixed(2)),
@@ -237,89 +302,6 @@ export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResult
     materialFlow: Number(materialFlow.toFixed(1)),
     workDone: Number(workDone.toFixed(2)),
     efficiency: Number(efficiency.toFixed(1)),
-    recommendations
+    recommendations,
   };
-}
-
-// Helper functions for recommendations
-function generateDrawingRecommendations(
-  params: WireDrawingParameters,
-  material: DrawingMaterialProperties,
-  results: any
-): string[] {
-  const recommendations: string[] = [];
-
-  if (results.reductionPerPass > material.reductionLimit) {
-    recommendations.push(`Reduction per pass (${results.reductionPerPass.toFixed(1)}%) exceeds material limit (${material.reductionLimit}%) - increase number of passes`);
-  }
-
-  if (params.dieAngle < 6) {
-    recommendations.push('Die angle is very small - may cause excessive drawing force');
-  } else if (params.dieAngle > 20) {
-    recommendations.push('Die angle is large - may cause surface defects');
-  }
-
-  if (!params.lubrication) {
-    recommendations.push('Use lubrication to reduce drawing force and improve surface quality');
-  }
-
-  if (results.dieStress > material.ultimateStrength * 3) {
-    recommendations.push('Die stress is high - consider using harder die material');
-  }
-
-  if (results.efficiency < 70) {
-    recommendations.push('Low efficiency - optimize die angle and lubrication');
-  }
-
-  if (params.drawingSpeed > 100) {
-    recommendations.push('High drawing speed may cause heating - monitor temperature');
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push('Drawing parameters are well optimized for this material');
-  }
-
-  return recommendations;
-}
-
-function generateExtrusionRecommendations(
-  params: ExtrusionParameters,
-  material: DrawingMaterialProperties,
-  results: any
-): string[] {
-  const recommendations: string[] = [];
-
-  if (results.extrusionRatio > 50) {
-    recommendations.push('Very high extrusion ratio - consider multiple-stage extrusion');
-  }
-
-  if (params.temperature < 200 && material.name.includes('Steel')) {
-    recommendations.push('Consider hot extrusion for steel materials to reduce force');
-  }
-
-  if (params.dieAngle > 90) {
-    recommendations.push('Die angle is very large - may cause material flow issues');
-  }
-
-  if (results.extrusionPressure > 1000) {
-    recommendations.push('High extrusion pressure - ensure press capability');
-  }
-
-  if (!params.lubrication && params.extrusionType === 'direct') {
-    recommendations.push('Use lubrication for direct extrusion to reduce friction');
-  }
-
-  if (results.efficiency < 60) {
-    recommendations.push('Low efficiency - optimize temperature and die design');
-  }
-
-  if (params.extrusionSpeed > 50 && params.temperature < 300) {
-    recommendations.push('High speed with low temperature may cause defects');
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push('Extrusion parameters are optimized for this process');
-  }
-
-  return recommendations;
 }
