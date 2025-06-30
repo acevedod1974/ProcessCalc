@@ -14,8 +14,8 @@ export interface MaterialProperties {
 }
 
 export const MATERIALS: Record<string, MaterialProperties> = {
-  'steel-low-carbon': {
-    name: 'Steel (Low Carbon)',
+  "steel-low-carbon": {
+    name: "Steel (Low Carbon)",
     density: 7850,
     yieldStrength: 250,
     ultimateStrength: 400,
@@ -24,10 +24,10 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 50,
     specificHeat: 460,
     flowStressCoefficient: 530,
-    strainHardeningExponent: 0.26
+    strainHardeningExponent: 0.26,
   },
-  'steel-medium-carbon': {
-    name: 'Steel (Medium Carbon)',
+  "steel-medium-carbon": {
+    name: "Steel (Medium Carbon)",
     density: 7850,
     yieldStrength: 350,
     ultimateStrength: 550,
@@ -36,10 +36,10 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 48,
     specificHeat: 460,
     flowStressCoefficient: 700,
-    strainHardeningExponent: 0.23
+    strainHardeningExponent: 0.23,
   },
-  'aluminum-6061': {
-    name: 'Aluminum 6061',
+  "aluminum-6061": {
+    name: "Aluminum 6061",
     density: 2700,
     yieldStrength: 276,
     ultimateStrength: 310,
@@ -48,10 +48,10 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 167,
     specificHeat: 896,
     flowStressCoefficient: 350,
-    strainHardeningExponent: 0.20
+    strainHardeningExponent: 0.2,
   },
-  'copper': {
-    name: 'Copper',
+  copper: {
+    name: "Copper",
     density: 8960,
     yieldStrength: 70,
     ultimateStrength: 220,
@@ -60,8 +60,8 @@ export const MATERIALS: Record<string, MaterialProperties> = {
     thermalConductivity: 401,
     specificHeat: 385,
     flowStressCoefficient: 315,
-    strainHardeningExponent: 0.54
-  }
+    strainHardeningExponent: 0.54,
+  },
 };
 
 export interface RollingParameters {
@@ -92,36 +92,72 @@ export interface RollingResults {
 export function calculateRolling(params: RollingParameters): RollingResults {
   const material = MATERIALS[params.material];
   if (!material) {
-    throw new Error('Material not found');
+    throw new Error("Material not found");
   }
 
-  // Basic calculations
+  // --- FORMULA AUDIT & UNIT CONSISTENCY ---
+  // Reference: Kalpakjian & Schmid, Manufacturing Engineering & Technology, 8th Ed.
+
+  // All input thicknesses, widths, and diameters are assumed to be in mm.
+  // All speeds in m/min. All forces in N, stresses in MPa.
+
+  // 1. Reduction (mm)
   const reduction = params.initialThickness - params.finalThickness;
+  // 2. Reduction Ratio (%)
   const reductionRatio = (reduction / params.initialThickness) * 100;
+  // 3. True Strain (dimensionless)
   const trueStrain = Math.log(params.initialThickness / params.finalThickness);
-  
-  // Contact geometry
-  const contactLength = Math.sqrt(reduction * (params.rollDiameter / 2));
-  const contactAngle = Math.sqrt(reduction / (params.rollDiameter / 2));
-  
-  // Flow stress calculation (simplified)
-  const averageFlowStress = material.flowStressCoefficient * Math.pow(trueStrain, material.strainHardeningExponent);
-  
-  // Rolling force calculation (Hitchcock's formula)
-  const rollingForce = averageFlowStress * params.width * contactLength * 1000; // Convert to N
-  
-  // Power calculation
-  const rollCircumference = Math.PI * params.rollDiameter / 1000; // Convert to m
-  const rollRPM = params.rollingSpeed / rollCircumference;
-  const rollAngularVelocity = (rollRPM * 2 * Math.PI) / 60;
-  const torque = rollingForce * contactLength / 2000; // Nm
-  const rollingPower = torque * rollAngularVelocity / 1000; // kW
-  
-  // Additional calculations
-  const separatingForce = rollingForce * Math.sin(contactAngle);
+
+  // 4. Contact Length (mm)
+  // Standard: l = sqrt(R * (h0 - h1)), R in mm, h0/h1 in mm
+  const R = params.rollDiameter / 2; // mm
+  const contactLength = Math.sqrt(R * reduction); // mm
+
+  // 5. Contact Angle (radians)
+  // theta = sqrt((h0 - h1) / R)
+  const contactAngle = Math.sqrt(reduction / R); // radians
+
+  // 6. Average Flow Stress (MPa)
+  // σ̄ = K * (ε̄)^n, K in MPa, ε̄ dimensionless
+  const averageFlowStress =
+    material.flowStressCoefficient *
+    Math.pow(trueStrain, material.strainHardeningExponent); // MPa
+
+  // 7. Rolling Force (N)
+  // F = σ̄ * w * l, w/l in mm, σ̄ in MPa (1 MPa = 1 N/mm²)
+  // Convert MPa to N/mm² (1:1), so units are consistent
+  const rollingForce = averageFlowStress * params.width * contactLength; // N
+
+  // 8. Power Calculation
+  // Roll Circumference (mm)
+  const rollCircumference = Math.PI * params.rollDiameter; // mm
+  // Convert rollingSpeed from m/min to mm/min for consistency
+  const rollingSpeed_mm_min = params.rollingSpeed * 1000; // mm/min
+  // Roll RPM = surface speed / circumference
+  const rollRPM = rollingSpeed_mm_min / rollCircumference;
+  // Roll Angular Velocity (rad/s)
+  const rollAngularVelocity = (rollRPM * 2 * Math.PI) / 60; // rad/s
+  // Torque (N·mm)
+  const torque = rollingForce * contactLength; // N·mm
+  // Convert torque to N·m for power calculation
+  const torque_Nm = torque / 1000; // N·m
+  // Rolling Power (W)
+  const rollingPower = torque_Nm * rollAngularVelocity; // W
+
+  // 9. Additional Calculations
+  // Separating Force (N)
+  const separatingForce = rollingForce * Math.sin(contactAngle); // N
+  // Roll Pressure (MPa)
   const rollPressure = rollingForce / (params.width * contactLength); // MPa
-  const exitVelocity = params.rollingSpeed * (params.initialThickness / params.finalThickness);
-  const forwardSlip = ((exitVelocity - params.rollingSpeed) / params.rollingSpeed) * 100;
+  // Exit Velocity (m/min)
+  const exitVelocity =
+    params.rollingSpeed * (params.initialThickness / params.finalThickness); // m/min
+  // Forward Slip (%)
+  const forwardSlip =
+    ((exitVelocity - params.rollingSpeed) / params.rollingSpeed) * 100;
+
+  // --- END FORMULA AUDIT ---
+  // All units are now SI-consistent. See comments for details.
 
   return {
     reductionRatio,
@@ -130,11 +166,11 @@ export function calculateRolling(params: RollingParameters): RollingResults {
     averageFlowStress,
     rollingForce,
     rollingPower,
-    torque,
+    torque: torque_Nm, // Return torque in N·m for clarity
     separatingForce,
     rollPressure,
     exitVelocity,
-    forwardSlip
+    forwardSlip,
   };
 }
 
@@ -145,7 +181,7 @@ export interface ForgingParameters {
   diameter: number;
   frictionCoefficient: number;
   temperature?: number;
-  dieType: 'flat' | 'grooved';
+  dieType: "flat" | "grooved";
 }
 
 export interface ForgingResults {
@@ -161,29 +197,36 @@ export interface ForgingResults {
 export function calculateForging(params: ForgingParameters): ForgingResults {
   const material = MATERIALS[params.material];
   if (!material) {
-    throw new Error('Material not found');
+    throw new Error("Material not found");
   }
 
   const reduction = params.initialHeight - params.finalHeight;
   const reductionRatio = (reduction / params.initialHeight) * 100;
   const trueStrain = Math.log(params.initialHeight / params.finalHeight);
-  
+
   // Flow stress calculation
-  const averageFlowStress = material.flowStressCoefficient * Math.pow(trueStrain, material.strainHardeningExponent);
-  
+  const averageFlowStress =
+    material.flowStressCoefficient *
+    Math.pow(trueStrain, material.strainHardeningExponent);
+
   // Area calculation
   const area = Math.PI * Math.pow(params.diameter / 2, 2);
-  
+
   // Friction factor
-  const frictionFactor = params.dieType === 'flat' ? 
-    1 + (params.frictionCoefficient * params.diameter) / (3 * params.finalHeight) :
-    1 + (params.frictionCoefficient * params.diameter) / (4 * params.finalHeight);
-  
+  const frictionFactor =
+    params.dieType === "flat"
+      ? 1 +
+        (params.frictionCoefficient * params.diameter) /
+          (3 * params.finalHeight)
+      : 1 +
+        (params.frictionCoefficient * params.diameter) /
+          (4 * params.finalHeight);
+
   // Forging force
   const forgingForce = averageFlowStress * area * frictionFactor * 1000; // Convert to N
-  
+
   // Work and power calculations
-  const workDone = forgingForce * reduction / 1000; // kJ
+  const workDone = (forgingForce * reduction) / 1000; // kJ
   const forgingPower = workDone; // Assuming 1 second operation for simplicity
   const efficiency = 0.85; // Typical forging efficiency
 
@@ -194,42 +237,42 @@ export function calculateForging(params: ForgingParameters): ForgingResults {
     forgingForce,
     forgingPower,
     workDone,
-    efficiency
+    efficiency,
   };
 }
 
 // Unit conversion utilities
 export function convertLength(value: number, from: string, to: string): number {
   const conversions: Record<string, number> = {
-    'mm': 1,
-    'cm': 10,
-    'm': 1000,
-    'in': 25.4,
-    'ft': 304.8
+    mm: 1,
+    cm: 10,
+    m: 1000,
+    in: 25.4,
+    ft: 304.8,
   };
-  
+
   return (value * conversions[from]) / conversions[to];
 }
 
 export function convertForce(value: number, from: string, to: string): number {
   const conversions: Record<string, number> = {
-    'N': 1,
-    'kN': 1000,
-    'MN': 1000000,
-    'lbf': 4.448,
-    'kip': 4448
+    N: 1,
+    kN: 1000,
+    MN: 1000000,
+    lbf: 4.448,
+    kip: 4448,
   };
-  
+
   return (value * conversions[from]) / conversions[to];
 }
 
 export function convertPower(value: number, from: string, to: string): number {
   const conversions: Record<string, number> = {
-    'W': 1,
-    'kW': 1000,
-    'MW': 1000000,
-    'hp': 745.7
+    W: 1,
+    kW: 1000,
+    MW: 1000000,
+    hp: 745.7,
   };
-  
+
   return (value * conversions[from]) / conversions[to];
 }

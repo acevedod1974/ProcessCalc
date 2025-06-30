@@ -6,7 +6,9 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
 
 ## Fase 1: Corrección Fundamental (Prioridad Inmediata)
 
-- [ ] Corregir todas las fórmulas y unidades en los motores de cálculo (`calculations.ts`, `cuttingCalculations.ts`, `machiningCalculations.ts`, `drawingExtrusionCalculations.ts`).
+- [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`calculations.ts` - función calculateRolling auditada y corregida; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
+- [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`cuttingCalculations.ts` - funciones calculatePunching y calculateShearing auditadas y corregidas; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
+- [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`machiningCalculations.ts`, `drawingExtrusionCalculations.ts` - todas las funciones principales auditadas y corregidas; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
 - [ ] Validar todas las fórmulas con fuentes de ingeniería y/o expertos.
 - [ ] Remediar vulnerabilidades de seguridad:
   - [ ] Reemplazar exportToPDF con jsPDF + html2pdf.js.
@@ -55,3 +57,28 @@ Trabaja cada fase en orden. Marca los ítems completados y haz commit en la rama
 - Revisa y corrige los archivos de utilidades de cálculo para asegurar consistencia SI y exactitud física.
 - Documenta cada corrección y valida con fuentes confiables.
 - Haz commit de los cambios y actualiza este plan.
+
+#### Detalle de correcciones en calculations.ts (calculateRolling):
+
+- Todas las fórmulas revisadas y documentadas con comentarios detallados.
+- Unidades SI validadas y consistentes (mm, N, MPa, m/min, N·m).
+- Corrección de conversiones y torque (ahora en N·m).
+- Referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology, 8th Ed.
+- Listo para validación cruzada y revisión de expertos.
+
+#### Detalle de correcciones en cuttingCalculations.ts:
+
+- Todas las fórmulas de calculatePunching y calculateShearing revisadas y documentadas con comentarios detallados.
+- Unidades SI validadas y consistentes (mm, N, MPa, J, W).
+- Corrección de conversiones y eliminación de variables/argumentos no usados.
+- Referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology, 8th Ed.
+- Listo para validación cruzada y revisión de expertos.
+
+#### Detalle de correcciones en machiningCalculations.ts y drawingExtrusionCalculations.ts:
+
+- Todas las fórmulas de cálculo de torneado, fresado, taladrado, extrusión y trefilado revisadas y documentadas con comentarios detallados.
+- Unidades SI validadas y consistentes (mm, N, MPa, kW, J, min, etc.).
+- Eliminación de tipos `any` en funciones auxiliares, uso de tipado fuerte.
+- Corrección de conversiones, factores empíricos y recomendaciones.
+- Referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology, 8th Ed.
+- Listo para validación cruzada y revisión de expertos.
