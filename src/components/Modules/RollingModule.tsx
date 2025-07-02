@@ -343,6 +343,16 @@ export function RollingModule({
           </div>
         </div>
       )}
+      {formState.results &&
+        formState.results.recommendations &&
+        formState.results.recommendations.length > 0 && (
+          <div className="mt-4">
+            <RecommendationCard
+              recommendations={formState.results.recommendations}
+              type="info"
+            />
+          </div>
+        )}
     </>
   );
 }

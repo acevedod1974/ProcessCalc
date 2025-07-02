@@ -2,6 +2,7 @@ import React from "react";
 import { InputField } from "../UI/InputField";
 import { ResultCard } from "../UI/ResultCard";
 import { Calculator, CheckCircle } from "lucide-react";
+import { RecommendationCard } from "../UI/RecommendationCard";
 // Types are now defined locally to avoid undefined props from main file modularization
 type ForgingParameters = {
   material: string;
@@ -13,11 +14,18 @@ type ForgingParameters = {
   temperature?: string;
 };
 
+type Recommendation = {
+  title: string;
+  description: string;
+  [key: string]: unknown;
+};
+
 type ForgingResults = {
   reductionRatio: number;
   forgingForce: number;
   workDone: number;
   efficiency: number;
+  recommendations?: Recommendation[];
 };
 
 type ForgingFormState = {
@@ -122,10 +130,10 @@ export function ForgingModule({
     }, 500);
   }
   return (
-    <>
+    <React.Fragment>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div
-          className={`$${
+          className={`${
             isDark ? "bg-slate-800" : "bg-white"
           } rounded-xl shadow-lg p-6`}
         >
@@ -196,7 +204,7 @@ export function ForgingModule({
           </div>
         </div>
         <div
-          className={`$${
+          className={`${
             isDark ? "bg-slate-800" : "bg-white"
           } rounded-xl shadow-lg p-6`}
         >
@@ -269,56 +277,69 @@ export function ForgingModule({
         </div>
       </div>
       {formState.results && (
-        <div
-          className={`${
-            isDark ? "bg-slate-800" : "bg-white"
-          } rounded-xl shadow-lg p-6`}
-        >
-          <div className="flex items-center space-x-2 mb-6">
-            <CheckCircle
-              className={`${isDark ? "text-green-400" : "text-green-600"}`}
-              size={20}
-            />
-            <h3
-              className={`text-lg font-semibold ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Forging Analysis Results
-            </h3>
+        <React.Fragment>
+          <div
+            className={`${
+              isDark ? "bg-slate-800" : "bg-white"
+            } rounded-xl shadow-lg p-6`}
+          >
+            <div className="flex items-center space-x-2 mb-6">
+              <CheckCircle
+                className={`${isDark ? "text-green-400" : "text-green-600"}`}
+                size={20}
+              />
+              <h3
+                className={`text-lg font-semibold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Forging Analysis Results
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <ResultCard
+                title="Reduction Ratio"
+                value={formState.results.reductionRatio}
+                unit="%"
+                description="Height reduction percentage"
+                trend="up"
+              />
+              <ResultCard
+                title="Forging Force"
+                value={formState.results.forgingForce}
+                unit={state.unitSystem.force}
+                description="Force required for forging"
+                trend="up"
+              />
+              <ResultCard
+                title="Work Done"
+                value={formState.results.workDone}
+                unit="kJ"
+                description="Energy consumed"
+                trend="neutral"
+              />
+              <ResultCard
+                title="Efficiency"
+                value={formState.results.efficiency}
+                unit="%"
+                description="Process efficiency"
+                trend="up"
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <ResultCard
-              title="Reduction Ratio"
-              value={formState.results.reductionRatio}
-              unit="%"
-              description="Height reduction percentage"
-              trend="up"
-            />
-            <ResultCard
-              title="Forging Force"
-              value={formState.results.forgingForce}
-              unit={state.unitSystem.force}
-              description="Force required for forging"
-              trend="up"
-            />
-            <ResultCard
-              title="Work Done"
-              value={formState.results.workDone}
-              unit="kJ"
-              description="Energy consumed"
-              trend="neutral"
-            />
-            <ResultCard
-              title="Efficiency"
-              value={formState.results.efficiency}
-              unit="%"
-              description="Process efficiency"
-              trend="up"
-            />
-          </div>
-        </div>
+          {/* RecommendationCard is rendered only if recommendations exist */}
+          {formState.results &&
+            Array.isArray(formState.results.recommendations) &&
+            formState.results.recommendations.length > 0 && (
+              <div className="mt-4">
+                <RecommendationCard
+                  recommendations={formState.results.recommendations}
+                  type="info"
+                />
+              </div>
+            )}
+        </React.Fragment>
       )}
-    </>
+    </React.Fragment>
   );
 }

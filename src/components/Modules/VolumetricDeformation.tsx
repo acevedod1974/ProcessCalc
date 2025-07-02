@@ -1,5 +1,5 @@
 // ...existing code...
-import React, { useState, useActionState, startTransition } from "react";
+import React, { useState, startTransition } from "react";
 import { useApp } from "../../contexts/AppContext";
 // Removed unused UI imports after modularization
 import { RollingModule } from "./RollingModule";
@@ -26,122 +26,19 @@ export function VolumetricDeformation() {
   // (Assume extrusionAction and initial state are defined in a module or above)
   // --- EXTRUSION STATE/ACTION ---
   // Move the extrusionAction function definition here (from previous modularization or backup)
-  type ExtrusionFormState = {
-    params: {
-      material: string;
-      billetDiameter: string;
-      extrudedDiameter: string;
-      billetLength: string;
-      extrusionSpeed: string;
-      extrusionType: string;
-      dieAngle: string;
-      temperature: string;
-      lubrication: boolean;
-    };
-    errors: Record<string, string>;
-    results: unknown;
-    isCalculating: boolean;
-  };
+  // Removed: ExtrusionFormState type, now handled inside ExtrusionModule
 
-  function validateExtrusionInputs(
-    params: ExtrusionFormState["params"]
-  ): Record<string, string> {
-    const newErrors: Record<string, string> = {};
-    if (!params.material) newErrors.material = "Material is required";
-    if (!params.billetDiameter || Number(params.billetDiameter) <= 0)
-      newErrors.billetDiameter = "Billet diameter must be greater than 0";
-    if (!params.extrudedDiameter || Number(params.extrudedDiameter) <= 0)
-      newErrors.extrudedDiameter = "Extruded diameter must be greater than 0";
-    if (Number(params.extrudedDiameter) >= Number(params.billetDiameter))
-      newErrors.extrudedDiameter =
-        "Extruded diameter must be less than billet diameter";
-    if (!params.billetLength || Number(params.billetLength) <= 0)
-      newErrors.billetLength = "Billet length must be greater than 0";
-    if (!params.extrusionSpeed || Number(params.extrusionSpeed) <= 0)
-      newErrors.extrusionSpeed = "Extrusion speed must be greater than 0";
-    if (!params.extrusionType)
-      newErrors.extrusionType = "Extrusion type is required";
-    return newErrors;
-  }
+  // Removed: validateExtrusionInputs is now handled inside ExtrusionModule
 
-  async function extrusionAction(
-    prevState: ExtrusionFormState,
-    formData: ExtrusionFormState["params"]
-  ): Promise<ExtrusionFormState> {
-    const errors = validateExtrusionInputs(formData);
-    if (Object.keys(errors).length > 0) {
-      return { ...prevState, errors, isCalculating: false };
-    }
-    try {
-      // Log input parameters for debugging
-      console.log("[Extrusion] Input Params:", formData);
+  // Removed: extrusionAction is now handled inside ExtrusionModule
 
-      // Dummy calculation results for verification
-      const results = {
-        extrusionRatio: 10.5,
-        areaReductionRatio: 85.2,
-        extrusionForce: 120000,
-        extrusionPressure: 350,
-        extrusionPower: 45,
-        extrusionTime: 2.5,
-        materialFlow: 150,
-        workDone: 320,
-        efficiency: 92,
-      };
-      // Log output results for debugging
-      console.log("[Extrusion] Results:", results);
-      return { ...prevState, results, errors: {}, isCalculating: false };
-    } catch (error) {
-      const errMsg =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-      return { ...prevState, errors: { global: errMsg }, isCalculating: false };
-    }
-  }
+  // Removed: extrusionState and extrusionSubmit are now managed inside ExtrusionModule
 
-  const [extrusionState, extrusionSubmit] = useActionState(extrusionAction, {
-    params: {
-      material: "",
-      billetDiameter: "",
-      extrudedDiameter: "",
-      billetLength: "",
-      extrusionSpeed: "",
-      extrusionType: "direct",
-      dieAngle: "45",
-      temperature: "400",
-      lubrication: false,
-    },
-    errors: {},
-    results: null,
-    isCalculating: false,
-  });
-
-  React.useEffect(() => {
-    if (extrusionState && extrusionState.params) {
-      setExtrusionFields(extrusionState.params);
-    }
-  }, [extrusionState]);
-  // --- EXTRUSION FORM LOCAL STATE ---
-  // (Type and initial state are already declared later in the file, so only declare the state variable here)
-  const [extrusionFields, setExtrusionFields] = useState({
-    material: "",
-    billetDiameter: "",
-    extrudedDiameter: "",
-    billetLength: "",
-    extrusionSpeed: "",
-    extrusionType: "direct",
-    dieAngle: "45",
-    temperature: "400",
-    lubrication: false,
-  });
+  // Removed: extrusionState effect, now handled inside ExtrusionModule
+  // Removed: extrusionFields and setExtrusionFields, now handled inside ExtrusionModule
 
   // extrusionState is declared later, so move this effect after extrusionState is defined
-
-  // When user clicks Calculate, update extrusionState with current fields
-  const handleExtrusionSubmit = () => {
-    extrusionSubmit(extrusionFields);
-  };
+  // handleExtrusionSubmit removed: now handled internally by ExtrusionModule
   const { state } = useApp();
   const isDark = state.theme.mode === "dark";
 
@@ -315,10 +212,6 @@ export function VolumetricDeformation() {
       {/* Extrusion Process */}
       {activeProcess === "extrusion" && (
         <ExtrusionModule
-          extrusionFields={extrusionFields}
-          setExtrusionFields={setExtrusionFields}
-          extrusionState={extrusionState}
-          extrusionSubmit={handleExtrusionSubmit}
           state={state}
           isDark={isDark}
           formingMaterialOptions={formingMaterialOptions}

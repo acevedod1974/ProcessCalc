@@ -22,7 +22,8 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
 
 - [x] Actualizar dependencias clave (React 19, ESLint 9, Vite, etc.).
   - [2025-06-30] Todas las dependencias principales actualizadas a sus versiones más recientes (React 19, ESLint 9, TailwindCSS 4, lucide-react, @types, globals, etc.) y reinstaladas correctamente.
-- [ ] Refactorizar todos los formularios para usar useActionState de React 19.
+- [x] Refactorizar todos los formularios para usar useActionState de React 19.
+  - [2025-07-02] Todos los módulos principales (Rolling, Forging, Drawing, Extrusion) ahora usan useActionState y son autocontenidos. Lógica, validación y resultados gestionados internamente. UI/UX y recomendaciones unificadas.
 - [ ] Unificar la gestión de estado en AppContext, usando localStorage solo como persistencia secundaria.
 - [ ] Eliminar todos los usos de `any` y "números mágicos"; centralizar tipos y constantes.
 - [ ] Migrar configuración de ESLint a formato plano (eslint.config.js).
