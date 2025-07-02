@@ -218,7 +218,7 @@ export function VolumetricDeformation() {
         temperature: Number(formData.temperature || 20),
       };
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Dummy calculation for now
+      // Dummy calculation for now (no debug logs)
       const reductionRatio =
         ((params.initialHeight - params.finalHeight) / params.initialHeight) *
         100;
@@ -242,9 +242,14 @@ export function VolumetricDeformation() {
     }
   }
 
-  const [forgingState, forgingDispatch, forgingSubmit] = useActionState(
+  const [forgingState, forgingSubmit] = useActionState(
     forgingAction,
     initialForgingState
+  );
+
+  // Forging form local state (like rollingFields)
+  const [forgingFields, setForgingFields] = useState(
+    initialForgingState.params
   );
 
   // --- DRAWING STATE/ACTION ---
@@ -317,9 +322,15 @@ export function VolumetricDeformation() {
       return { ...prevState, errors: { global: errMsg }, isCalculating: false };
     }
   }
+
   const [drawingState, drawingSubmit] = useActionState(
     drawingAction,
     initialDrawingState
+  );
+
+  // Drawing form local state
+  const [drawingFields, setDrawingFields] = useState(
+    initialDrawingState.params
   );
 
   // --- EXTRUSION STATE/ACTION ---
@@ -811,12 +822,9 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Material"
-                  value={forgingState.params.material || ""}
+                  value={forgingFields.material || ""}
                   onChange={(value) =>
-                    forgingDispatch({
-                      ...forgingState,
-                      params: { ...forgingState.params, material: value },
-                    })
+                    setForgingFields((f) => ({ ...f, material: value }))
                   }
                   type="select"
                   options={formingMaterialOptions}
@@ -827,15 +835,9 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Initial Height"
-                    value={forgingState.params.initialHeight || ""}
+                    value={forgingFields.initialHeight || ""}
                     onChange={(value) =>
-                      forgingDispatch({
-                        ...forgingState,
-                        params: {
-                          ...forgingState.params,
-                          initialHeight: value,
-                        },
-                      })
+                      setForgingFields((f) => ({ ...f, initialHeight: value }))
                     }
                     type="number"
                     placeholder="50.0"
@@ -847,12 +849,9 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Final Height"
-                    value={forgingState.params.finalHeight || ""}
+                    value={forgingFields.finalHeight || ""}
                     onChange={(value) =>
-                      forgingDispatch({
-                        ...forgingState,
-                        params: { ...forgingState.params, finalHeight: value },
-                      })
+                      setForgingFields((f) => ({ ...f, finalHeight: value }))
                     }
                     type="number"
                     placeholder="30.0"
@@ -865,12 +864,9 @@ export function VolumetricDeformation() {
                 </div>
                 <InputField
                   label="Diameter"
-                  value={forgingState.params.diameter || ""}
+                  value={forgingFields.diameter || ""}
                   onChange={(value) =>
-                    forgingDispatch({
-                      ...forgingState,
-                      params: { ...forgingState.params, diameter: value },
-                    })
+                    setForgingFields((f) => ({ ...f, diameter: value }))
                   }
                   type="number"
                   placeholder="100.0"
@@ -897,12 +893,9 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Die Type"
-                  value={forgingState.params.dieType || ""}
+                  value={forgingFields.dieType || ""}
                   onChange={(value) =>
-                    forgingDispatch({
-                      ...forgingState,
-                      params: { ...forgingState.params, dieType: value },
-                    })
+                    setForgingFields((f) => ({ ...f, dieType: value }))
                   }
                   type="select"
                   options={[
@@ -916,15 +909,12 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Friction Coefficient"
-                    value={forgingState.params.frictionCoefficient || ""}
+                    value={forgingFields.frictionCoefficient || ""}
                     onChange={(value) =>
-                      forgingDispatch({
-                        ...forgingState,
-                        params: {
-                          ...forgingState.params,
-                          frictionCoefficient: value,
-                        },
-                      })
+                      setForgingFields((f) => ({
+                        ...f,
+                        frictionCoefficient: value,
+                      }))
                     }
                     type="number"
                     placeholder="0.3"
@@ -934,12 +924,9 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Temperature"
-                    value={forgingState.params.temperature || ""}
+                    value={forgingFields.temperature || ""}
                     onChange={(value) =>
-                      forgingDispatch({
-                        ...forgingState,
-                        params: { ...forgingState.params, temperature: value },
-                      })
+                      setForgingFields((f) => ({ ...f, temperature: value }))
                     }
                     type="number"
                     placeholder="20"
@@ -948,7 +935,11 @@ export function VolumetricDeformation() {
                   />
                 </div>
                 <button
-                  onClick={() => forgingSubmit(forgingState.params)}
+                  onClick={() =>
+                    startTransition(() => {
+                      forgingSubmit(forgingFields);
+                    })
+                  }
                   disabled={forgingState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
@@ -1023,8 +1014,6 @@ export function VolumetricDeformation() {
           )}
         </>
       )}
-
-      {/* Drawing Process */}
       {activeProcess === "drawing" && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1179,7 +1168,11 @@ export function VolumetricDeformation() {
                   </label>
                 </div>
                 <button
-                  onClick={() => drawingSubmit(drawingFields)}
+                  onClick={() =>
+                    startTransition(() => {
+                      drawingSubmit(drawingFields);
+                    })
+                  }
                   disabled={drawingState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
@@ -1472,7 +1465,11 @@ export function VolumetricDeformation() {
                   </label>
                 </div>
                 <button
-                  onClick={() => extrusionSubmit(extrusionFields)}
+                  onClick={() =>
+                    startTransition(() => {
+                      extrusionSubmit(extrusionFields);
+                    })
+                  }
                   disabled={extrusionState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
