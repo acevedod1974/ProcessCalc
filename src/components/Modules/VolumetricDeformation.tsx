@@ -1,4 +1,4 @@
-import React, { useState, useActionState, useEffect } from "react";
+import React, { useState, useActionState, startTransition } from "react";
 import { useApp } from "../../contexts/AppContext";
 import { InputField } from "../UI/InputField";
 import { ResultCard } from "../UI/ResultCard";
@@ -16,6 +16,14 @@ import {
   RollingParameters,
   RollingResults,
 } from "../../utils/calculations";
+import {
+  calculateWireDrawing,
+  WireDrawingParameters,
+  WireDrawingResults,
+  calculateExtrusion,
+  ExtrusionParameters,
+  ExtrusionResults,
+} from "../../utils/drawingExtrusionCalculations";
 
 const formingMaterialOptions = [
   { value: "steel", label: "Steel" },
@@ -34,16 +42,14 @@ export function VolumetricDeformation() {
   // State management
   const [activeProcess, setActiveProcess] =
     useState<DeformationProcess>("rolling");
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Rolling form state and action (React 19)
+  // Rolling calculation action state
   type RollingFormState = {
     params: Partial<RollingParameters>;
-    isCalculating: boolean;
     errors: Record<string, string>;
     results: RollingResults | null;
+    isCalculating: boolean;
   };
-
   const initialRollingState: RollingFormState = {
     params: {
       material: "",
@@ -55,11 +61,10 @@ export function VolumetricDeformation() {
       frictionCoefficient: "0.3",
       temperature: "20",
     },
-    isCalculating: false,
     errors: {},
     results: null,
+    isCalculating: false,
   };
-
   function validateRollingInputs(
     params: Partial<RollingParameters>
   ): Record<string, string> {
@@ -80,28 +85,146 @@ export function VolumetricDeformation() {
       newErrors.rollingSpeed = "Rolling speed must be greater than 0";
     return newErrors;
   }
+  const [rollingState, rollingSubmit] = useActionState(
+    async (prevState, formData) => {
+      // Set isCalculating to true immediately
+      if (!prevState.isCalculating) {
+        console.log("[Rolling] Set isCalculating to true", {
+          prevState,
+          formData,
+        });
+        return { ...prevState, isCalculating: true };
+      }
+      // Only run calculation if already calculating
+      console.log("[Rolling] Running calculation", { prevState, formData });
+      const errors = validateRollingInputs(formData);
+      if (Object.keys(errors).length > 0) {
+        console.log("[Rolling] Validation errors", errors);
+        return { ...prevState, errors, isCalculating: false };
+      }
+      try {
+        const params: RollingParameters = {
+          material: formData.material!,
+          initialThickness: Number(formData.initialThickness),
+          finalThickness: Number(formData.finalThickness),
+          width: Number(formData.width),
+          rollDiameter: Number(formData.rollDiameter),
+          rollingSpeed: Number(formData.rollingSpeed),
+          frictionCoefficient: Number(formData.frictionCoefficient || 0.3),
+          temperature: Number(formData.temperature || 20),
+        };
+        console.log("[Rolling] Params for calculation", params);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const results = calculateRolling(params);
+        console.log("[Rolling] Calculation results", results);
+        return { ...prevState, results, errors: {}, isCalculating: false };
+      } catch (error) {
+        const errMsg =
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred.";
+        console.error("[Rolling] Calculation error", error);
+        return {
+          ...prevState,
+          errors: { global: errMsg },
+          isCalculating: false,
+        };
+      }
+    },
+    initialRollingState
+  );
 
-  async function rollingAction(
-    prevState: RollingFormState,
-    formData: Partial<RollingParameters>
-  ): Promise<RollingFormState> {
-    const errors = validateRollingInputs(formData);
+  // --- FORGING STATE/ACTION ---
+
+  type ForgingParameters = {
+    material: string;
+    initialHeight: string;
+    finalHeight: string;
+    diameter: string;
+    dieType: string;
+    frictionCoefficient?: string;
+    temperature?: string;
+  };
+
+  type ForgingResults = {
+    reductionRatio: number;
+    forgingForce: number;
+    workDone: number;
+    efficiency: number;
+  };
+
+  type ForgingFormState = {
+    params: Partial<ForgingParameters>;
+    isCalculating: boolean;
+    errors: Record<string, string>;
+    results: ForgingResults | null;
+  };
+
+  const initialForgingState: ForgingFormState = {
+    params: {
+      material: "",
+      initialHeight: "",
+      finalHeight: "",
+      diameter: "",
+      dieType: "",
+      frictionCoefficient: "0.3",
+      temperature: "20",
+    },
+    isCalculating: false,
+    errors: {},
+    results: null,
+  };
+
+  function validateForgingInputs(
+    params: Partial<ForgingParameters>
+  ): Record<string, string> {
+    const newErrors: Record<string, string> = {};
+    if (!params.material) newErrors.material = "Material is required";
+    if (!params.initialHeight || Number(params.initialHeight) <= 0)
+      newErrors.initialHeight = "Initial height must be greater than 0";
+    if (!params.finalHeight || Number(params.finalHeight) <= 0)
+      newErrors.finalHeight = "Final height must be greater than 0";
+    if (Number(params.finalHeight) >= Number(params.initialHeight))
+      newErrors.finalHeight = "Final height must be less than initial height";
+    if (!params.diameter || Number(params.diameter) <= 0)
+      newErrors.diameter = "Diameter must be greater than 0";
+    if (!params.dieType) newErrors.dieType = "Die type is required";
+    return newErrors;
+  }
+
+  async function forgingAction(
+    prevState: ForgingFormState,
+    formData: Partial<ForgingParameters>
+  ): Promise<ForgingFormState> {
+    const errors = validateForgingInputs(formData);
     if (Object.keys(errors).length > 0) {
       return { ...prevState, errors };
     }
     try {
-      const params: RollingParameters = {
+      const params = {
         material: formData.material!,
-        initialThickness: Number(formData.initialThickness),
-        finalThickness: Number(formData.finalThickness),
-        width: Number(formData.width),
-        rollDiameter: Number(formData.rollDiameter),
-        rollingSpeed: Number(formData.rollingSpeed),
+        initialHeight: Number(formData.initialHeight),
+        finalHeight: Number(formData.finalHeight),
+        diameter: Number(formData.diameter),
+        dieType: formData.dieType!,
         frictionCoefficient: Number(formData.frictionCoefficient || 0.3),
         temperature: Number(formData.temperature || 20),
       };
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const results = calculateRolling(params);
+      // Dummy calculation for now
+      const reductionRatio =
+        ((params.initialHeight - params.finalHeight) / params.initialHeight) *
+        100;
+      const forgingForce = params.diameter * 1000; // Dummy
+      const workDone =
+        forgingForce * (params.initialHeight - params.finalHeight); // Dummy
+      const efficiency = 90; // Dummy
+      const results: ForgingResults = {
+        reductionRatio,
+        forgingForce,
+        workDone,
+        efficiency,
+      };
       return { ...prevState, results, errors: {}, isCalculating: false };
     } catch (error) {
       const errMsg =
@@ -112,15 +235,164 @@ export function VolumetricDeformation() {
     }
   }
 
-  const [rollingState, rollingDispatch, rollingSubmit] = useActionState(
-    rollingAction,
-    initialRollingState
+  const [forgingState, forgingDispatch, forgingSubmit] = useActionState(
+    forgingAction,
+    initialForgingState
   );
 
-  // Clear results when process changes
-  useEffect(() => {
-    setErrors({});
-  }, [activeProcess]);
+  // --- DRAWING STATE/ACTION ---
+  type DrawingFormState = {
+    params: Partial<WireDrawingParameters>;
+    errors: Record<string, string>;
+    results: WireDrawingResults | null;
+    isCalculating: boolean;
+  };
+  const initialDrawingState: DrawingFormState = {
+    params: {
+      material: "",
+      initialDiameter: "",
+      finalDiameter: "",
+      drawingSpeed: "",
+      numberOfPasses: "1",
+      dieAngle: "8",
+      temperature: "20",
+      lubrication: false,
+    },
+    errors: {},
+    results: null,
+    isCalculating: false,
+  };
+  function validateDrawingInputs(
+    params: Partial<WireDrawingParameters>
+  ): Record<string, string> {
+    const newErrors: Record<string, string> = {};
+    if (!params.material) newErrors.material = "Material is required";
+    if (!params.initialDiameter || Number(params.initialDiameter) <= 0)
+      newErrors.initialDiameter = "Initial diameter must be greater than 0";
+    if (!params.finalDiameter || Number(params.finalDiameter) <= 0)
+      newErrors.finalDiameter = "Final diameter must be greater than 0";
+    if (Number(params.finalDiameter) >= Number(params.initialDiameter))
+      newErrors.finalDiameter =
+        "Final diameter must be less than initial diameter";
+    if (!params.drawingSpeed || Number(params.drawingSpeed) <= 0)
+      newErrors.drawingSpeed = "Drawing speed must be greater than 0";
+    if (!params.numberOfPasses || Number(params.numberOfPasses) < 1)
+      newErrors.numberOfPasses = "Number of passes must be at least 1";
+    return newErrors;
+  }
+  async function drawingAction(
+    prevState: DrawingFormState,
+    formData: Partial<WireDrawingParameters>
+  ): Promise<DrawingFormState> {
+    const errors = validateDrawingInputs(formData);
+    if (Object.keys(errors).length > 0) {
+      return { ...prevState, errors, isCalculating: false };
+    }
+    try {
+      const params: WireDrawingParameters = {
+        material: formData.material!,
+        initialDiameter: Number(formData.initialDiameter),
+        finalDiameter: Number(formData.finalDiameter),
+        drawingSpeed: Number(formData.drawingSpeed),
+        numberOfPasses: Number(formData.numberOfPasses),
+        dieAngle: Number(formData.dieAngle || 8),
+        temperature: Number(formData.temperature || 20),
+        lubrication: Boolean(formData.lubrication),
+      };
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const results = calculateWireDrawing(params);
+      return { ...prevState, results, errors: {}, isCalculating: false };
+    } catch (error) {
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
+      return { ...prevState, errors: { global: errMsg }, isCalculating: false };
+    }
+  }
+  const [drawingState, drawingSubmit] = useActionState(
+    drawingAction,
+    initialDrawingState
+  );
+
+  // --- EXTRUSION STATE/ACTION ---
+  type ExtrusionFormState = {
+    params: Partial<ExtrusionParameters>;
+    errors: Record<string, string>;
+    results: ExtrusionResults | null;
+    isCalculating: boolean;
+  };
+  const initialExtrusionState: ExtrusionFormState = {
+    params: {
+      material: "",
+      billetDiameter: "",
+      extrudedDiameter: "",
+      billetLength: "",
+      extrusionSpeed: "",
+      extrusionType: "direct",
+      dieAngle: "45",
+      temperature: "400",
+      lubrication: false,
+    },
+    errors: {},
+    results: null,
+    isCalculating: false,
+  };
+  function validateExtrusionInputs(
+    params: Partial<ExtrusionParameters>
+  ): Record<string, string> {
+    const newErrors: Record<string, string> = {};
+    if (!params.material) newErrors.material = "Material is required";
+    if (!params.billetDiameter || Number(params.billetDiameter) <= 0)
+      newErrors.billetDiameter = "Billet diameter must be greater than 0";
+    if (!params.extrudedDiameter || Number(params.extrudedDiameter) <= 0)
+      newErrors.extrudedDiameter = "Extruded diameter must be greater than 0";
+    if (Number(params.extrudedDiameter) >= Number(params.billetDiameter))
+      newErrors.extrudedDiameter =
+        "Extruded diameter must be less than billet diameter";
+    if (!params.billetLength || Number(params.billetLength) <= 0)
+      newErrors.billetLength = "Billet length must be greater than 0";
+    if (!params.extrusionSpeed || Number(params.extrusionSpeed) <= 0)
+      newErrors.extrusionSpeed = "Extrusion speed must be greater than 0";
+    if (!params.extrusionType)
+      newErrors.extrusionType = "Extrusion type is required";
+    return newErrors;
+  }
+  async function extrusionAction(
+    prevState: ExtrusionFormState,
+    formData: Partial<ExtrusionParameters>
+  ): Promise<ExtrusionFormState> {
+    const errors = validateExtrusionInputs(formData);
+    if (Object.keys(errors).length > 0) {
+      return { ...prevState, errors, isCalculating: false };
+    }
+    try {
+      const params: ExtrusionParameters = {
+        material: formData.material!,
+        billetDiameter: Number(formData.billetDiameter),
+        extrudedDiameter: Number(formData.extrudedDiameter),
+        billetLength: Number(formData.billetLength),
+        extrusionSpeed: Number(formData.extrusionSpeed),
+        extrusionType: formData.extrusionType as "direct" | "indirect",
+        dieAngle: Number(formData.dieAngle || 45),
+        temperature: Number(formData.temperature || 400),
+        lubrication: Boolean(formData.lubrication),
+      };
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const results = calculateExtrusion(params);
+      return { ...prevState, results, errors: {}, isCalculating: false };
+    } catch (error) {
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
+      return { ...prevState, errors: { global: errMsg }, isCalculating: false };
+    }
+  }
+  const [extrusionState, extrusionSubmit] = useActionState(
+    extrusionAction,
+    initialExtrusionState
+  );
 
   const processes = [
     {
@@ -148,6 +420,11 @@ export function VolumetricDeformation() {
       icon: "⚡",
     },
   ];
+
+  // Rolling form local state
+  const [rollingFields, setRollingFields] = useState(
+    initialRollingState.params
+  );
 
   return (
     <div className="space-y-6">
@@ -269,12 +546,9 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Material"
-                  value={rollingState.params.material || ""}
+                  value={rollingFields.material || ""}
                   onChange={(value) =>
-                    rollingDispatch({
-                      ...rollingState,
-                      params: { ...rollingState.params, material: value },
-                    })
+                    setRollingFields((f) => ({ ...f, material: value }))
                   }
                   type="select"
                   options={formingMaterialOptions}
@@ -285,15 +559,12 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Initial Thickness"
-                    value={rollingState.params.initialThickness || ""}
+                    value={rollingFields.initialThickness || ""}
                     onChange={(value) =>
-                      rollingDispatch({
-                        ...rollingState,
-                        params: {
-                          ...rollingState.params,
-                          initialThickness: value,
-                        },
-                      })
+                      setRollingFields((f) => ({
+                        ...f,
+                        initialThickness: value,
+                      }))
                     }
                     type="number"
                     placeholder="10.0"
@@ -305,15 +576,9 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Final Thickness"
-                    value={rollingState.params.finalThickness || ""}
+                    value={rollingFields.finalThickness || ""}
                     onChange={(value) =>
-                      rollingDispatch({
-                        ...rollingState,
-                        params: {
-                          ...rollingState.params,
-                          finalThickness: value,
-                        },
-                      })
+                      setRollingFields((f) => ({ ...f, finalThickness: value }))
                     }
                     type="number"
                     placeholder="8.0"
@@ -326,12 +591,9 @@ export function VolumetricDeformation() {
                 </div>
                 <InputField
                   label="Width"
-                  value={rollingState.params.width || ""}
+                  value={rollingFields.width || ""}
                   onChange={(value) =>
-                    rollingDispatch({
-                      ...rollingState,
-                      params: { ...rollingState.params, width: value },
-                    })
+                    setRollingFields((f) => ({ ...f, width: value }))
                   }
                   type="number"
                   placeholder="100.0"
@@ -358,12 +620,9 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Roll Diameter"
-                  value={rollingState.params.rollDiameter || ""}
+                  value={rollingFields.rollDiameter || ""}
                   onChange={(value) =>
-                    rollingDispatch({
-                      ...rollingState,
-                      params: { ...rollingState.params, rollDiameter: value },
-                    })
+                    setRollingFields((f) => ({ ...f, rollDiameter: value }))
                   }
                   type="number"
                   placeholder="300.0"
@@ -375,12 +634,9 @@ export function VolumetricDeformation() {
                 />
                 <InputField
                   label="Rolling Speed"
-                  value={rollingState.params.rollingSpeed || ""}
+                  value={rollingFields.rollingSpeed || ""}
                   onChange={(value) =>
-                    rollingDispatch({
-                      ...rollingState,
-                      params: { ...rollingState.params, rollingSpeed: value },
-                    })
+                    setRollingFields((f) => ({ ...f, rollingSpeed: value }))
                   }
                   type="number"
                   placeholder="50.0"
@@ -393,15 +649,12 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Friction Coefficient"
-                    value={rollingState.params.frictionCoefficient || ""}
+                    value={rollingFields.frictionCoefficient || ""}
                     onChange={(value) =>
-                      rollingDispatch({
-                        ...rollingState,
-                        params: {
-                          ...rollingState.params,
-                          frictionCoefficient: value,
-                        },
-                      })
+                      setRollingFields((f) => ({
+                        ...f,
+                        frictionCoefficient: value,
+                      }))
                     }
                     type="number"
                     placeholder="0.3"
@@ -411,12 +664,9 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Temperature"
-                    value={rollingState.params.temperature || ""}
+                    value={rollingFields.temperature || ""}
                     onChange={(value) =>
-                      rollingDispatch({
-                        ...rollingState,
-                        params: { ...rollingState.params, temperature: value },
-                      })
+                      setRollingFields((f) => ({ ...f, temperature: value }))
                     }
                     type="number"
                     placeholder="20"
@@ -425,7 +675,11 @@ export function VolumetricDeformation() {
                   />
                 </div>
                 <button
-                  onClick={() => rollingSubmit(rollingState.params)}
+                  onClick={() =>
+                    startTransition(() => {
+                      rollingSubmit(rollingFields);
+                    })
+                  }
                   disabled={rollingState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
@@ -554,26 +808,31 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Material"
-                  value={forgingParams.material || ""}
+                  value={forgingState.params.material || ""}
                   onChange={(value) =>
-                    setForgingParams((prev) => ({ ...prev, material: value }))
+                    forgingDispatch({
+                      ...forgingState,
+                      params: { ...forgingState.params, material: value },
+                    })
                   }
                   type="select"
                   options={formingMaterialOptions}
                   placeholder="Select Material..."
                   required
-                  error={errors.material}
+                  error={forgingState.errors.material}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Initial Height"
-                    value={forgingParams.initialHeight || ""}
+                    value={forgingState.params.initialHeight || ""}
                     onChange={(value) =>
-                      setForgingParams((prev) => ({
-                        ...prev,
-                        initialHeight: value,
-                      }))
+                      forgingDispatch({
+                        ...forgingState,
+                        params: {
+                          ...forgingState.params,
+                          initialHeight: value,
+                        },
+                      })
                     }
                     type="number"
                     placeholder="50.0"
@@ -581,16 +840,16 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.initialHeight}
+                    error={forgingState.errors.initialHeight}
                   />
                   <InputField
                     label="Final Height"
-                    value={forgingParams.finalHeight || ""}
+                    value={forgingState.params.finalHeight || ""}
                     onChange={(value) =>
-                      setForgingParams((prev) => ({
-                        ...prev,
-                        finalHeight: value,
-                      }))
+                      forgingDispatch({
+                        ...forgingState,
+                        params: { ...forgingState.params, finalHeight: value },
+                      })
                     }
                     type="number"
                     placeholder="30.0"
@@ -598,15 +857,17 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.finalHeight}
+                    error={forgingState.errors.finalHeight}
                   />
                 </div>
-
                 <InputField
                   label="Diameter"
-                  value={forgingParams.diameter || ""}
+                  value={forgingState.params.diameter || ""}
                   onChange={(value) =>
-                    setForgingParams((prev) => ({ ...prev, diameter: value }))
+                    forgingDispatch({
+                      ...forgingState,
+                      params: { ...forgingState.params, diameter: value },
+                    })
                   }
                   type="number"
                   placeholder="100.0"
@@ -614,11 +875,10 @@ export function VolumetricDeformation() {
                   required
                   step="1"
                   min="0"
-                  error={errors.diameter}
+                  error={forgingState.errors.diameter}
                 />
               </div>
             </div>
-
             <div
               className={`${
                 isDark ? "bg-slate-800" : "bg-white"
@@ -634,9 +894,12 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Die Type"
-                  value={forgingParams.dieType || ""}
+                  value={forgingState.params.dieType || ""}
                   onChange={(value) =>
-                    setForgingParams((prev) => ({ ...prev, dieType: value }))
+                    forgingDispatch({
+                      ...forgingState,
+                      params: { ...forgingState.params, dieType: value },
+                    })
                   }
                   type="select"
                   options={[
@@ -645,17 +908,20 @@ export function VolumetricDeformation() {
                   ]}
                   placeholder="Select Die Type..."
                   required
+                  error={forgingState.errors.dieType}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Friction Coefficient"
-                    value={forgingParams.frictionCoefficient || ""}
+                    value={forgingState.params.frictionCoefficient || ""}
                     onChange={(value) =>
-                      setForgingParams((prev) => ({
-                        ...prev,
-                        frictionCoefficient: value,
-                      }))
+                      forgingDispatch({
+                        ...forgingState,
+                        params: {
+                          ...forgingState.params,
+                          frictionCoefficient: value,
+                        },
+                      })
                     }
                     type="number"
                     placeholder="0.3"
@@ -665,12 +931,12 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Temperature"
-                    value={forgingParams.temperature || ""}
+                    value={forgingState.params.temperature || ""}
                     onChange={(value) =>
-                      setForgingParams((prev) => ({
-                        ...prev,
-                        temperature: value,
-                      }))
+                      forgingDispatch({
+                        ...forgingState,
+                        params: { ...forgingState.params, temperature: value },
+                      })
                     }
                     type="number"
                     placeholder="20"
@@ -678,13 +944,12 @@ export function VolumetricDeformation() {
                     step="1"
                   />
                 </div>
-
                 <button
-                  onClick={handleForgingCalculation}
-                  disabled={isCalculating}
+                  onClick={() => forgingSubmit(forgingState.params)}
+                  disabled={forgingState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
-                  {isCalculating ? (
+                  {forgingState.isCalculating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                       <span>Calculating...</span>
@@ -701,7 +966,7 @@ export function VolumetricDeformation() {
           </div>
 
           {/* Forging Results */}
-          {forgingResults && (
+          {forgingState.results && (
             <div
               className={`${
                 isDark ? "bg-slate-800" : "bg-white"
@@ -724,28 +989,28 @@ export function VolumetricDeformation() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <ResultCard
                   title="Reduction Ratio"
-                  value={forgingResults.reductionRatio}
+                  value={forgingState.results.reductionRatio}
                   unit="%"
                   description="Height reduction percentage"
                   trend="up"
                 />
                 <ResultCard
                   title="Forging Force"
-                  value={forgingResults.forgingForce}
+                  value={forgingState.results.forgingForce}
                   unit={state.unitSystem.force}
                   description="Force required for forging"
                   trend="up"
                 />
                 <ResultCard
                   title="Work Done"
-                  value={forgingResults.workDone}
+                  value={forgingState.results.workDone}
                   unit="kJ"
                   description="Energy consumed"
                   trend="neutral"
                 />
                 <ResultCard
                   title="Efficiency"
-                  value={forgingResults.efficiency}
+                  value={forgingState.results.efficiency}
                   unit="%"
                   description="Process efficiency"
                   trend="up"
@@ -775,24 +1040,23 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Material"
-                  value={drawingParams.material || ""}
+                  value={drawingFields.material || ""}
                   onChange={(value) =>
-                    setDrawingParams((prev) => ({ ...prev, material: value }))
+                    setDrawingFields((f) => ({ ...f, material: value }))
                   }
                   type="select"
-                  options={drawingMaterialOptions}
+                  options={formingMaterialOptions}
                   placeholder="Select Material..."
                   required
-                  error={errors.material}
+                  error={drawingState.errors.material}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Initial Diameter"
-                    value={drawingParams.initialDiameter || ""}
+                    value={drawingFields.initialDiameter || ""}
                     onChange={(value) =>
-                      setDrawingParams((prev) => ({
-                        ...prev,
+                      setDrawingFields((f) => ({
+                        ...f,
                         initialDiameter: value,
                       }))
                     }
@@ -802,16 +1066,13 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.initialDiameter}
+                    error={drawingState.errors.initialDiameter}
                   />
                   <InputField
                     label="Final Diameter"
-                    value={drawingParams.finalDiameter || ""}
+                    value={drawingFields.finalDiameter || ""}
                     onChange={(value) =>
-                      setDrawingParams((prev) => ({
-                        ...prev,
-                        finalDiameter: value,
-                      }))
+                      setDrawingFields((f) => ({ ...f, finalDiameter: value }))
                     }
                     type="number"
                     placeholder="4.0"
@@ -819,19 +1080,15 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.finalDiameter}
+                    error={drawingState.errors.finalDiameter}
                   />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Drawing Speed"
-                    value={drawingParams.drawingSpeed || ""}
+                    value={drawingFields.drawingSpeed || ""}
                     onChange={(value) =>
-                      setDrawingParams((prev) => ({
-                        ...prev,
-                        drawingSpeed: value,
-                      }))
+                      setDrawingFields((f) => ({ ...f, drawingSpeed: value }))
                     }
                     type="number"
                     placeholder="10.0"
@@ -839,28 +1096,24 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.drawingSpeed}
+                    error={drawingState.errors.drawingSpeed}
                   />
                   <InputField
                     label="Number of Passes"
-                    value={drawingParams.numberOfPasses || ""}
+                    value={drawingFields.numberOfPasses || ""}
                     onChange={(value) =>
-                      setDrawingParams((prev) => ({
-                        ...prev,
-                        numberOfPasses: value,
-                      }))
+                      setDrawingFields((f) => ({ ...f, numberOfPasses: value }))
                     }
                     type="number"
                     placeholder="1"
                     required
                     step="1"
                     min="1"
-                    error={errors.numberOfPasses}
+                    error={drawingState.errors.numberOfPasses}
                   />
                 </div>
               </div>
             </div>
-
             <div
               className={`${
                 isDark ? "bg-slate-800" : "bg-white"
@@ -877,9 +1130,9 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Die Angle"
-                    value={drawingParams.dieAngle || ""}
+                    value={drawingFields.dieAngle || ""}
                     onChange={(value) =>
-                      setDrawingParams((prev) => ({ ...prev, dieAngle: value }))
+                      setDrawingFields((f) => ({ ...f, dieAngle: value }))
                     }
                     type="number"
                     placeholder="8"
@@ -890,12 +1143,9 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Temperature"
-                    value={drawingParams.temperature || ""}
+                    value={drawingFields.temperature || ""}
                     onChange={(value) =>
-                      setDrawingParams((prev) => ({
-                        ...prev,
-                        temperature: value,
-                      }))
+                      setDrawingFields((f) => ({ ...f, temperature: value }))
                     }
                     type="number"
                     placeholder="20"
@@ -903,15 +1153,14 @@ export function VolumetricDeformation() {
                     step="1"
                   />
                 </div>
-
                 <div className="flex items-center space-x-3">
                   <input
                     type="checkbox"
                     id="lubrication-drawing"
-                    checked={drawingParams.lubrication || false}
+                    checked={drawingFields.lubrication || false}
                     onChange={(e) =>
-                      setDrawingParams((prev) => ({
-                        ...prev,
+                      setDrawingFields((f) => ({
+                        ...f,
                         lubrication: e.target.checked,
                       }))
                     }
@@ -926,13 +1175,12 @@ export function VolumetricDeformation() {
                     Use Lubrication
                   </label>
                 </div>
-
                 <button
-                  onClick={handleDrawingCalculation}
-                  disabled={isCalculating}
+                  onClick={() => drawingSubmit(drawingFields)}
+                  disabled={drawingState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
-                  {isCalculating ? (
+                  {drawingState.isCalculating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                       <span>Calculating...</span>
@@ -949,7 +1197,7 @@ export function VolumetricDeformation() {
           </div>
 
           {/* Drawing Results */}
-          {drawingResults && (
+          {drawingState.results && (
             <>
               <div
                 className={`${
@@ -975,28 +1223,28 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <ResultCard
                     title="Reduction Ratio"
-                    value={drawingResults.reductionRatio}
+                    value={drawingState.results.reductionRatio}
                     unit="%"
                     description="Area reduction percentage"
                     trend="up"
                   />
                   <ResultCard
                     title="Drawing Force"
-                    value={drawingResults.drawingForce}
+                    value={drawingState.results.drawingForce}
                     unit={state.unitSystem.force}
                     description="Force required for drawing"
                     trend="up"
                   />
                   <ResultCard
                     title="Drawing Power"
-                    value={drawingResults.drawingPower}
+                    value={drawingState.results.drawingPower}
                     unit={state.unitSystem.power}
                     description="Power consumption"
                     trend="up"
                   />
                   <ResultCard
                     title="Efficiency"
-                    value={drawingResults.efficiency}
+                    value={drawingState.results.efficiency}
                     unit="%"
                     description="Process efficiency"
                     trend="up"
@@ -1006,28 +1254,28 @@ export function VolumetricDeformation() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <ResultCard
                     title="Reduction per Pass"
-                    value={drawingResults.reductionPerPass}
+                    value={drawingState.results.reductionPerPass}
                     unit="%"
                     description="Reduction per drawing pass"
                     trend="neutral"
                   />
                   <ResultCard
                     title="Drawing Stress"
-                    value={drawingResults.drawingStress}
+                    value={drawingState.results.drawingStress}
                     unit={state.unitSystem.pressure}
                     description="Stress in drawn wire"
                     trend="up"
                   />
                   <ResultCard
                     title="Die Stress"
-                    value={drawingResults.dieStress}
+                    value={drawingState.results.dieStress}
                     unit={state.unitSystem.pressure}
                     description="Stress on drawing die"
                     trend="up"
                   />
                   <ResultCard
                     title="Work Done"
-                    value={drawingResults.workDone}
+                    value={drawingState.results.workDone}
                     unit="kJ"
                     description="Energy consumed"
                     trend="neutral"
@@ -1036,7 +1284,7 @@ export function VolumetricDeformation() {
               </div>
 
               <RecommendationCard
-                recommendations={drawingResults.recommendations}
+                recommendations={drawingState.results.recommendations}
                 type="info"
               />
             </>
@@ -1063,24 +1311,23 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Material"
-                  value={extrusionParams.material || ""}
+                  value={extrusionFields.material || ""}
                   onChange={(value) =>
-                    setExtrusionParams((prev) => ({ ...prev, material: value }))
+                    setExtrusionFields((f) => ({ ...f, material: value }))
                   }
                   type="select"
-                  options={drawingMaterialOptions}
+                  options={formingMaterialOptions}
                   placeholder="Select Material..."
                   required
-                  error={errors.material}
+                  error={extrusionState.errors.material}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Billet Diameter"
-                    value={extrusionParams.billetDiameter || ""}
+                    value={extrusionFields.billetDiameter || ""}
                     onChange={(value) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
+                      setExtrusionFields((f) => ({
+                        ...f,
                         billetDiameter: value,
                       }))
                     }
@@ -1090,14 +1337,14 @@ export function VolumetricDeformation() {
                     required
                     step="1"
                     min="0"
-                    error={errors.billetDiameter}
+                    error={extrusionState.errors.billetDiameter}
                   />
                   <InputField
                     label="Extruded Diameter"
-                    value={extrusionParams.extrudedDiameter || ""}
+                    value={extrusionFields.extrudedDiameter || ""}
                     onChange={(value) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
+                      setExtrusionFields((f) => ({
+                        ...f,
                         extrudedDiameter: value,
                       }))
                     }
@@ -1107,19 +1354,15 @@ export function VolumetricDeformation() {
                     required
                     step="1"
                     min="0"
-                    error={errors.extrudedDiameter}
+                    error={extrusionState.errors.extrudedDiameter}
                   />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Billet Length"
-                    value={extrusionParams.billetLength || ""}
+                    value={extrusionFields.billetLength || ""}
                     onChange={(value) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
-                        billetLength: value,
-                      }))
+                      setExtrusionFields((f) => ({ ...f, billetLength: value }))
                     }
                     type="number"
                     placeholder="200.0"
@@ -1127,14 +1370,14 @@ export function VolumetricDeformation() {
                     required
                     step="1"
                     min="0"
-                    error={errors.billetLength}
+                    error={extrusionState.errors.billetLength}
                   />
                   <InputField
                     label="Extrusion Speed"
-                    value={extrusionParams.extrusionSpeed || ""}
+                    value={extrusionFields.extrusionSpeed || ""}
                     onChange={(value) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
+                      setExtrusionFields((f) => ({
+                        ...f,
                         extrusionSpeed: value,
                       }))
                     }
@@ -1144,12 +1387,11 @@ export function VolumetricDeformation() {
                     required
                     step="0.1"
                     min="0"
-                    error={errors.extrusionSpeed}
+                    error={extrusionState.errors.extrusionSpeed}
                   />
                 </div>
               </div>
             </div>
-
             <div
               className={`${
                 isDark ? "bg-slate-800" : "bg-white"
@@ -1165,12 +1407,9 @@ export function VolumetricDeformation() {
               <div className="space-y-4">
                 <InputField
                   label="Extrusion Type"
-                  value={extrusionParams.extrusionType || ""}
+                  value={extrusionFields.extrusionType || ""}
                   onChange={(value) =>
-                    setExtrusionParams((prev) => ({
-                      ...prev,
-                      extrusionType: value,
-                    }))
+                    setExtrusionFields((f) => ({ ...f, extrusionType: value }))
                   }
                   type="select"
                   options={[
@@ -1179,17 +1418,14 @@ export function VolumetricDeformation() {
                   ]}
                   placeholder="Select Extrusion Type..."
                   required
+                  error={extrusionState.errors.extrusionType}
                 />
-
                 <div className="grid grid-cols-2 gap-4">
                   <InputField
                     label="Die Angle"
-                    value={extrusionParams.dieAngle || ""}
+                    value={extrusionFields.dieAngle || ""}
                     onChange={(value) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
-                        dieAngle: value,
-                      }))
+                      setExtrusionFields((f) => ({ ...f, dieAngle: value }))
                     }
                     type="number"
                     placeholder="45"
@@ -1200,12 +1436,9 @@ export function VolumetricDeformation() {
                   />
                   <InputField
                     label="Temperature"
-                    value={extrusionParams.temperature || ""}
+                    value={extrusionFields.temperature || ""}
                     onChange={(value) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
-                        temperature: value,
-                      }))
+                      setExtrusionFields((f) => ({ ...f, temperature: value }))
                     }
                     type="number"
                     placeholder="400"
@@ -1213,15 +1446,14 @@ export function VolumetricDeformation() {
                     step="10"
                   />
                 </div>
-
                 <div className="flex items-center space-x-3">
                   <input
                     type="checkbox"
                     id="lubrication-extrusion"
-                    checked={extrusionParams.lubrication || false}
+                    checked={extrusionFields.lubrication || false}
                     onChange={(e) =>
-                      setExtrusionParams((prev) => ({
-                        ...prev,
+                      setExtrusionFields((f) => ({
+                        ...f,
                         lubrication: e.target.checked,
                       }))
                     }
@@ -1236,13 +1468,12 @@ export function VolumetricDeformation() {
                     Use Lubrication
                   </label>
                 </div>
-
                 <button
-                  onClick={handleExtrusionCalculation}
-                  disabled={isCalculating}
+                  onClick={() => extrusionSubmit(extrusionFields)}
+                  disabled={extrusionState.isCalculating}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
-                  {isCalculating ? (
+                  {extrusionState.isCalculating ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                       <span>Calculating...</span>
@@ -1259,7 +1490,7 @@ export function VolumetricDeformation() {
           </div>
 
           {/* Extrusion Results */}
-          {extrusionResults && (
+          {extrusionState.results && (
             <>
               <div
                 className={`${
