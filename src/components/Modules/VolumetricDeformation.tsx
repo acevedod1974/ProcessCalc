@@ -26,11 +26,11 @@ import {
 } from "../../utils/drawingExtrusionCalculations";
 
 const formingMaterialOptions = [
-  { value: "steel", label: "Steel" },
-  { value: "aluminum", label: "Aluminum" },
+  { value: "steel-low-carbon", label: "Steel (Low Carbon)" },
+  { value: "steel-medium-carbon", label: "Steel (Medium Carbon)" },
+  { value: "aluminum-6061", label: "Aluminum 6061" },
   { value: "copper", label: "Copper" },
-  { value: "brass", label: "Brass" },
-  // Puedes agregar más materiales según necesidad
+  // Add more as needed, ensure value matches MATERIALS keys
 ];
 
 type DeformationProcess = "rolling" | "forging" | "drawing" | "extrusion";
@@ -85,52 +85,59 @@ export function VolumetricDeformation() {
       newErrors.rollingSpeed = "Rolling speed must be greater than 0";
     return newErrors;
   }
+  async function rollingAction(
+    prevState: RollingFormState,
+    formData: Partial<RollingParameters>
+  ): Promise<RollingFormState> {
+    // Defensive: ensure all fields are present and stringified
+    const safeParams = {
+      material: formData.material ?? "",
+      initialThickness: formData.initialThickness?.toString() ?? "",
+      finalThickness: formData.finalThickness?.toString() ?? "",
+      width: formData.width?.toString() ?? "",
+      rollDiameter: formData.rollDiameter?.toString() ?? "",
+      rollingSpeed: formData.rollingSpeed?.toString() ?? "",
+      frictionCoefficient: formData.frictionCoefficient?.toString() ?? "0.3",
+      temperature: formData.temperature?.toString() ?? "20",
+    };
+    const errors = validateRollingInputs(safeParams);
+    if (Object.keys(errors).length > 0) {
+      return { ...prevState, errors, isCalculating: false };
+    }
+    try {
+      const params: RollingParameters = {
+        material: safeParams.material!,
+        initialThickness: Number(safeParams.initialThickness),
+        finalThickness: Number(safeParams.finalThickness),
+        width: Number(safeParams.width),
+        rollDiameter: Number(safeParams.rollDiameter),
+        rollingSpeed: Number(safeParams.rollingSpeed),
+        frictionCoefficient: Number(safeParams.frictionCoefficient || 0.3),
+        temperature: Number(safeParams.temperature || 20),
+      };
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const results = calculateRolling(params);
+      return {
+        ...prevState,
+        results,
+        errors: {},
+        isCalculating: false,
+        params: initialRollingState.params,
+      };
+    } catch (error) {
+      const errMsg =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
+      return {
+        ...prevState,
+        errors: { global: errMsg },
+        isCalculating: false,
+      };
+    }
+  }
   const [rollingState, rollingSubmit] = useActionState(
-    async (prevState, formData) => {
-      // Set isCalculating to true immediately
-      if (!prevState.isCalculating) {
-        console.log("[Rolling] Set isCalculating to true", {
-          prevState,
-          formData,
-        });
-        return { ...prevState, isCalculating: true };
-      }
-      // Only run calculation if already calculating
-      console.log("[Rolling] Running calculation", { prevState, formData });
-      const errors = validateRollingInputs(formData);
-      if (Object.keys(errors).length > 0) {
-        console.log("[Rolling] Validation errors", errors);
-        return { ...prevState, errors, isCalculating: false };
-      }
-      try {
-        const params: RollingParameters = {
-          material: formData.material!,
-          initialThickness: Number(formData.initialThickness),
-          finalThickness: Number(formData.finalThickness),
-          width: Number(formData.width),
-          rollDiameter: Number(formData.rollDiameter),
-          rollingSpeed: Number(formData.rollingSpeed),
-          frictionCoefficient: Number(formData.frictionCoefficient || 0.3),
-          temperature: Number(formData.temperature || 20),
-        };
-        console.log("[Rolling] Params for calculation", params);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const results = calculateRolling(params);
-        console.log("[Rolling] Calculation results", results);
-        return { ...prevState, results, errors: {}, isCalculating: false };
-      } catch (error) {
-        const errMsg =
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred.";
-        console.error("[Rolling] Calculation error", error);
-        return {
-          ...prevState,
-          errors: { global: errMsg },
-          isCalculating: false,
-        };
-      }
-    },
+    rollingAction,
     initialRollingState
   );
 
@@ -701,90 +708,86 @@ export function VolumetricDeformation() {
 
           {/* Rolling Results */}
           {rollingState.results && (
-            <>
-              <div
-                className={`${
-                  isDark ? "bg-slate-800" : "bg-white"
-                } rounded-xl shadow-lg p-6`}
-              >
-                <div className="flex items-center space-x-2 mb-6">
-                  <CheckCircle
-                    className={`${
-                      isDark ? "text-green-400" : "text-green-600"
-                    }`}
-                    size={20}
-                  />
-                  <h3
-                    className={`text-lg font-semibold ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    Rolling Analysis Results
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <ResultCard
-                    title="Reduction Ratio"
-                    value={rollingState.results.reductionRatio}
-                    unit="%"
-                    description="Percentage reduction in thickness"
-                    trend="up"
-                  />
-                  <ResultCard
-                    title="Rolling Force"
-                    value={rollingState.results.rollingForce}
-                    unit={state.unitSystem.force}
-                    description="Force required for rolling"
-                    trend="up"
-                  />
-                  <ResultCard
-                    title="Rolling Power"
-                    value={rollingState.results.rollingPower}
-                    unit={state.unitSystem.power}
-                    description="Power consumption"
-                    trend="up"
-                  />
-                  <ResultCard
-                    title="Contact Length"
-                    value={rollingState.results.contactLength}
-                    unit={state.unitSystem.length}
-                    description="Roll-workpiece contact length"
-                    trend="neutral"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <ResultCard
-                    title="True Strain"
-                    value={rollingState.results.trueStrain}
-                    description="Logarithmic strain"
-                    trend="neutral"
-                  />
-                  <ResultCard
-                    title="Average Flow Stress"
-                    value={rollingState.results.averageFlowStress}
-                    unit={state.unitSystem.pressure}
-                    description="Material flow stress"
-                    trend="up"
-                  />
-                  <ResultCard
-                    title="Exit Velocity"
-                    value={rollingState.results.exitVelocity}
-                    unit="m/min"
-                    description="Material exit velocity"
-                    trend="up"
-                  />
-                  <ResultCard
-                    title="Forward Slip"
-                    value={rollingState.results.forwardSlip}
-                    unit="%"
-                    description="Forward slip percentage"
-                    trend="neutral"
-                  />
-                </div>
+            <div
+              className={`$${
+                isDark ? "bg-slate-800" : "bg-white"
+              } rounded-xl shadow-lg p-6`}
+            >
+              <div className="flex items-center space-x-2 mb-6">
+                <CheckCircle
+                  className={`$${isDark ? "text-green-400" : "text-green-600"}`}
+                  size={20}
+                />
+                <h3
+                  className={`text-lg font-semibold $${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Rolling Analysis Results
+                </h3>
               </div>
-            </>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <ResultCard
+                  title="Reduction Ratio"
+                  value={rollingState.results.reductionRatio}
+                  unit="%"
+                  description="Percentage reduction in thickness"
+                  trend="up"
+                />
+                <ResultCard
+                  title="Rolling Force"
+                  value={rollingState.results.rollingForce}
+                  unit={state.unitSystem.force}
+                  description="Force required for rolling"
+                  trend="up"
+                />
+                <ResultCard
+                  title="Rolling Power"
+                  value={rollingState.results.rollingPower}
+                  unit={state.unitSystem.power}
+                  description="Power consumption"
+                  trend="up"
+                />
+                <ResultCard
+                  title="Contact Length"
+                  value={rollingState.results.contactLength}
+                  unit={state.unitSystem.length}
+                  description="Roll-workpiece contact length"
+                  trend="neutral"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <ResultCard
+                  title="True Strain"
+                  value={rollingState.results.trueStrain}
+                  description="Logarithmic strain"
+                  trend="neutral"
+                />
+                <ResultCard
+                  title="Average Flow Stress"
+                  value={rollingState.results.averageFlowStress}
+                  unit={state.unitSystem.pressure}
+                  description="Material flow stress"
+                  trend="up"
+                />
+                <ResultCard
+                  title="Exit Velocity"
+                  value={rollingState.results.exitVelocity}
+                  unit="m/min"
+                  description="Material exit velocity"
+                  trend="up"
+                />
+                <ResultCard
+                  title="Forward Slip"
+                  value={rollingState.results.forwardSlip}
+                  unit="%"
+                  description="Forward slip percentage"
+                  trend="neutral"
+                />
+              </div>
+            </div>
           )}
         </>
       )}
