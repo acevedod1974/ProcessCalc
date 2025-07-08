@@ -9,6 +9,7 @@ import {
   Download,
   AlertCircle,
   CheckCircle,
+  Cog,
 } from "lucide-react";
 import {
   MACHINING_MATERIALS,
