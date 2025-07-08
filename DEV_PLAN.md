@@ -29,6 +29,14 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
 - [ ] Migrar configuración de ESLint a formato plano (eslint.config.js).
 - [ ] Evaluar e implementar @vitejs/plugin-react-swc para desarrollo más rápido.
 
+## MCP Server Integración y Limpieza (Completado)
+
+- [x] Integración y prueba de servidor MCP (GitHub) en settings.json, usando variable de entorno para el token.
+- [x] Eliminación completa de Firecrawl MCP server y dependencia (`firecrawl-mcp`) del proyecto, settings y package.json.
+- [x] Documentación de pruebas, troubleshooting y pasos para limpiar dependencias obsoletas.
+
+El proyecto está listo para QA final y pruebas de integración MCP.
+
 ## Fase 3: Crecimiento Sostenible (Largo Plazo)
 
 - [ ] Implementar backend seguro para autenticación y almacenamiento.
