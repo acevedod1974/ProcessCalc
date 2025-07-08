@@ -133,6 +133,11 @@ export interface TurningResults {
   recommendations: string[];
 }
 
+/**
+ * Calculate turning process parameters using machining mechanics principles
+ * @param params - Turning parameters including geometry, cutting conditions, and tool material
+ * @returns Complete turning analysis including forces, power, tool life, and cost analysis
+ */
 export function calculateTurning(params: TurningParameters): TurningResults {
   const material = MACHINING_MATERIALS[params.material];
   if (!material) {
@@ -153,8 +158,8 @@ export function calculateTurning(params: TurningParameters): TurningResults {
   // Power calculation
   const cuttingPower = (cuttingForce * params.cuttingSpeed) / 60000; // kW
 
-  // Machining time
-  const machiningTime = params.length / (params.feedRate * spindleSpeed);
+  // Machining time - corrected formula
+  const machiningTime = params.length / (params.feedRate * spindleSpeed / 60); // min
 
   // Surface roughness estimation
   const surfaceRoughness = (params.feedRate * params.feedRate) / (8 * 0.8); // μm (simplified)
@@ -217,6 +222,11 @@ export interface MillingResults {
   recommendations: string[];
 }
 
+/**
+ * Calculate milling process parameters using cutting mechanics and tool life equations
+ * @param params - Milling parameters including geometry, feed rates, and tool specifications
+ * @returns Complete milling analysis including speeds, forces, tool life, and cost optimization
+ */
 export function calculateMilling(params: MillingParameters): MillingResults {
   const material = MACHINING_MATERIALS[params.material];
   if (!material) {
@@ -301,6 +311,11 @@ export interface DrillingResults {
   recommendations: string[];
 }
 
+/**
+ * Calculate drilling process parameters using established drilling mechanics
+ * @param params - Drilling parameters including hole geometry, speeds, feeds, and tool material
+ * @returns Complete drilling analysis including torque, power, time, and cost calculations
+ */
 export function calculateDrilling(params: DrillingParameters): DrillingResults {
   const material = MACHINING_MATERIALS[params.material];
   if (!material) {
@@ -405,10 +420,17 @@ function getBaseToolLife(toolMaterial: string): number {
   return baseLife[toolMaterial as keyof typeof baseLife] || 50;
 }
 
+interface TurningCalculationResults {
+  spindleSpeed: number;
+  toolLife: number;
+  surfaceRoughness: number;
+  cuttingPower: number;
+}
+
 function generateTurningRecommendations(
   params: TurningParameters, 
   material: MachiningMaterialProperties,
-  results: any
+  results: TurningCalculationResults
 ): string[] {
   const recommendations: string[] = [];
   
@@ -443,10 +465,18 @@ function generateTurningRecommendations(
   return recommendations;
 }
 
+interface MillingCalculationResults {
+  cuttingSpeed: number;
+  feedPerTooth: number;
+  toolLife: number;
+  surfaceRoughness: number;
+  cuttingPower: number;
+}
+
 function generateMillingRecommendations(
   params: MillingParameters, 
   material: MachiningMaterialProperties,
-  results: any
+  results: MillingCalculationResults
 ): string[] {
   const recommendations: string[] = [];
   
@@ -479,10 +509,17 @@ function generateMillingRecommendations(
   return recommendations;
 }
 
+interface DrillingCalculationResults {
+  spindleSpeed: number;
+  penetrationRate: number;
+  torque: number;
+  power: number;
+}
+
 function generateDrillingRecommendations(
   params: DrillingParameters, 
   material: MachiningMaterialProperties,
-  results: any
+  results: DrillingCalculationResults
 ): string[] {
   const recommendations: string[] = [];
   
