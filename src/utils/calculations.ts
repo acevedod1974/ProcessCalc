@@ -89,6 +89,11 @@ export interface RollingResults {
   forwardSlip: number;
 }
 
+/**
+ * Calculate rolling process parameters using correct metallurgical formulas
+ * @param params - Rolling parameters including dimensions, material, and process conditions
+ * @returns Complete rolling analysis results including forces, power, and geometric parameters
+ */
 export function calculateRolling(params: RollingParameters): RollingResults {
   const material = MATERIALS[params.material];
   if (!material) {
@@ -101,14 +106,16 @@ export function calculateRolling(params: RollingParameters): RollingResults {
   const trueStrain = Math.log(params.initialThickness / params.finalThickness);
   
   // Contact geometry - corrected formulas
+  // Contact length: L = √(R * Δh) where R is roll radius, Δh is thickness reduction
   const rollRadius = params.rollDiameter / 2; // mm
   const contactLength = Math.sqrt(rollRadius * reduction); // mm
+  // Contact angle: α = √(Δh / R) in radians
   const contactAngle = Math.sqrt(reduction / rollRadius); // radians
   
-  // Flow stress calculation (simplified)
+  // Flow stress calculation using power law: σ = K * ε^n
   const averageFlowStress = material.flowStressCoefficient * Math.pow(trueStrain, material.strainHardeningExponent);
   
-  // Rolling force calculation (Hitchcock's formula)
+  // Rolling force calculation (Hitchcock's formula): F = σ * w * L
   const rollingForce = averageFlowStress * params.width * contactLength * 1000; // Convert to N
   
   // Power calculation
@@ -159,6 +166,11 @@ export interface ForgingResults {
   efficiency: number;
 }
 
+/**
+ * Calculate forging process parameters using established metallurgical principles
+ * @param params - Forging parameters including geometry, material, and process conditions
+ * @returns Forging analysis results including forces, work done, and efficiency
+ */
 export function calculateForging(params: ForgingParameters): ForgingResults {
   const material = MATERIALS[params.material];
   if (!material) {

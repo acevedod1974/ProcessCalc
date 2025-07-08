@@ -106,6 +106,11 @@ export interface PunchingResults {
   recommendations: string[];
 }
 
+/**
+ * Calculate punching/piercing process parameters using established formulas
+ * @param params - Punching parameters including hole geometry, material, and process conditions
+ * @returns Complete punching analysis including forces, energy, tool life, and quality assessment
+ */
 export function calculatePunching(params: PunchingParameters): PunchingResults {
   const material = CUTTING_MATERIALS[params.material];
   if (!material) {
@@ -119,11 +124,13 @@ export function calculatePunching(params: PunchingParameters): PunchingResults {
   // Clearance calculations
   const clearanceValue = (params.clearance / 100) * params.thickness;
 
-  // Punching force calculation
+  // Punching force calculation using: F = τ × A_shear = τ × π × D × t
+  // where τ = shear strength, D = hole diameter, t = thickness
   const shearArea = Math.PI * params.holeDiameter * params.thickness;
   const punchingForce = adjustedShearStrength * shearArea * 1000; // Convert to N
 
-  // Stripping force (typically 5-15% of punching force)
+  // Stripping force calculation: F_strip = F_punch × k_strip
+  // Stripping factor varies with thickness-to-diameter ratio
   const strippingFactor = 0.08 + (params.thickness / params.holeDiameter) * 0.02;
   const strippingForce = punchingForce * strippingFactor;
 
@@ -222,6 +229,11 @@ export interface ShearingResults {
   recommendations: string[];
 }
 
+/**
+ * Calculate shearing process parameters using metal cutting mechanics
+ * @param params - Shearing parameters including geometry, material, and cutting conditions
+ * @returns Complete shearing analysis including forces, power, blade wear, and recommendations
+ */
 export function calculateShearing(params: ShearingParameters): ShearingResults {
   const material = CUTTING_MATERIALS[params.material];
   if (!material) {
