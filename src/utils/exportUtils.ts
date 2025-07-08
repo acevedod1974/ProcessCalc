@@ -59,39 +59,48 @@ export function exportToCSV(calculations: ExportCalculation[]): void {
   });
 
   const headers = Array.from(allKeys).sort();
-  const escapeCsv = (value: unknown) => {
+  
+  // Strengthened escape function using tab separation and enhanced security
+  const escapeTsv = (value: unknown) => {
     let str = String(value ?? "");
-    // Prevent formula injection
-    if (["=", "+", "-", "@"].includes(str[0])) {
+    
+    // Prevent formula injection attacks
+    if (["=", "+", "-", "@", "\t", "\r", "\n"].includes(str[0])) {
       str = "'" + str;
     }
-    // Escape quotes
-    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-      str = '"' + str.replace(/"/g, '""') + '"';
-    }
+    
+    // Escape tabs, newlines, and carriage returns for TSV format
+    str = str
+      .replace(/\t/g, "\\t")  // Replace actual tabs with escaped tabs
+      .replace(/\r/g, "\\r")  // Replace carriage returns
+      .replace(/\n/g, "\\n")  // Replace newlines
+      .replace(/\\/g, "\\\\"); // Escape backslashes
+    
     return str;
   };
-  const csvContent = [
-    headers.join(","),
+
+  // Use tab-separated values (TSV) format for enhanced security
+  const tsvContent = [
+    headers.join("\t"),
     ...calculations.map((calc) =>
       headers
         .map((header) => {
           if (header.startsWith("param_")) {
             const paramKey = header.replace("param_", "");
-            return escapeCsv(calc.parameters?.[paramKey]);
+            return escapeTsv(calc.parameters?.[paramKey]);
           } else if (header.startsWith("result_")) {
             const resultKey = header.replace("result_", "");
-            return escapeCsv(calc.results?.[resultKey]);
+            return escapeTsv(calc.results?.[resultKey]);
           } else {
-            return escapeCsv(calc[header as keyof ExportCalculation]);
+            return escapeTsv(calc[header as keyof ExportCalculation]);
           }
         })
-        .join(",")
+        .join("\t")
     ),
   ].join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv" });
-  downloadFile(blob, `processcalc-calculations-${formatDate(new Date())}.csv`);
+  const blob = new Blob([tsvContent], { type: "text/tab-separated-values" });
+  downloadFile(blob, `processcalc-calculations-${formatDate(new Date())}.tsv`);
 }
 
 function escapeHtml(str: string): string {
@@ -107,41 +116,26 @@ export function exportToPDF(
   calculations: ExportCalculation[],
   projects: ExportProject[]
 ): void {
-  // Create a simple HTML report with escaped content
+  // Create a secure HTML report with escaped content for html2pdf.js
   const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>ProcessCalc Report</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .section { margin-bottom: 30px; }
-        .calculation { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; }
-        .project { background-color: #f5f5f5; padding: 15px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>ProcessCalc Report</h1>
-        <p>Generated on: ${escapeHtml(new Date().toLocaleString())}</p>
+    <div style="font-family: Arial, sans-serif; margin: 20px; max-width: 800px;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #333;">ProcessCalc Report</h1>
+        <p style="color: #666;">Generated on: ${escapeHtml(new Date().toLocaleString())}</p>
       </div>
       
-      <div class="section">
-        <h2>Projects (${projects.length})</h2>
+      <div style="margin-bottom: 30px;">
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 5px;">Projects (${projects.length})</h2>
         ${projects
           .map(
             (project) => `
-          <div class="project">
-            <h3>${escapeHtml(project.name)}</h3>
-            <p>${escapeHtml(project.description || "")}</p>
-            <p><strong>Created:</strong> ${escapeHtml(
+          <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px;">
+            <h3 style="color: #666; margin-top: 0;">${escapeHtml(project.name)}</h3>
+            <p style="margin: 5px 0;">${escapeHtml(project.description || "")}</p>
+            <p style="margin: 5px 0;"><strong>Created:</strong> ${escapeHtml(
               new Date(project.createdAt).toLocaleDateString()
             )}</p>
-            <p><strong>Calculations:</strong> ${escapeHtml(
+            <p style="margin: 5px 0;"><strong>Calculations:</strong> ${escapeHtml(
               String(project.calculations?.length || 0)
             )}</p>
           </div>
@@ -150,25 +144,25 @@ export function exportToPDF(
           .join("")}
       </div>
       
-      <div class="section">
-        <h2>Calculations (${calculations.length})</h2>
+      <div style="margin-bottom: 30px;">
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 5px;">Calculations (${calculations.length})</h2>
         ${calculations
           .map(
             (calc) => `
-          <div class="calculation">
-            <h3>${escapeHtml(calc.name)}</h3>
-            <p><strong>Type:</strong> ${escapeHtml(calc.type)}</p>
-            <p><strong>Material:</strong> ${escapeHtml(calc.material)}</p>
-            <p><strong>Date:</strong> ${escapeHtml(
+          <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; page-break-inside: avoid;">
+            <h3 style="color: #666; margin-top: 0;">${escapeHtml(calc.name)}</h3>
+            <p style="margin: 5px 0;"><strong>Type:</strong> ${escapeHtml(calc.type)}</p>
+            <p style="margin: 5px 0;"><strong>Material:</strong> ${escapeHtml(calc.material)}</p>
+            <p style="margin: 5px 0;"><strong>Date:</strong> ${escapeHtml(
               new Date(calc.timestamp).toLocaleDateString()
             )}</p>
             
-            <h4>Parameters</h4>
-            <table>
+            <h4 style="color: #666; margin: 15px 0 10px 0;">Parameters</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
               ${Object.entries(calc.parameters || {})
                 .map(
                   ([key, value]) => `
-                <tr><td>${escapeHtml(key)}</td><td>${escapeHtml(
+                <tr><td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">${escapeHtml(key)}</td><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(
                     String(value)
                   )}</td></tr>
               `
@@ -176,12 +170,12 @@ export function exportToPDF(
                 .join("")}
             </table>
             
-            <h4>Results</h4>
-            <table>
+            <h4 style="color: #666; margin: 15px 0 10px 0;">Results</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px;">
               ${Object.entries(calc.results || {})
                 .map(
                   ([key, value]) => `
-                <tr><td>${escapeHtml(key)}</td><td>${escapeHtml(
+                <tr><td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">${escapeHtml(key)}</td><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(
                     String(value)
                   )}</td></tr>
               `
@@ -193,20 +187,36 @@ export function exportToPDF(
           )
           .join("")}
       </div>
-    </body>
-    </html>
+    </div>
   `;
 
-  // Create a new window and print
-  const printWindow = window.open("", "_blank");
-  if (printWindow) {
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+  // Use html2pdf.js for secure PDF generation
+  if (typeof window !== 'undefined' && (window as any).html2pdf) {
+    // Create a temporary element with the content
+    const element = document.createElement('div');
+    element.innerHTML = htmlContent;
+    element.style.position = 'absolute';
+    element.style.left = '-9999px';
+    document.body.appendChild(element);
+
+    const opt = {
+      margin: 1,
+      filename: `processcalc-report-${formatDate(new Date())}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    (window as any).html2pdf().set(opt).from(element).save().then(() => {
+      document.body.removeChild(element);
+    });
+  } else {
+    // Fallback: download as HTML file if html2pdf.js is not available
+    const blob = new Blob([`<!DOCTYPE html><html><head><title>ProcessCalc Report</title></head><body>${htmlContent}</body></html>`], { 
+      type: 'text/html' 
+    });
+    downloadFile(blob, `processcalc-report-${formatDate(new Date())}.html`);
+    console.warn('html2pdf.js not available. Report exported as HTML file instead.');
   }
 }
 

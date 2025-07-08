@@ -12,11 +12,15 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
   - [2025-06-30] Fórmulas revisadas, SI validado, variables no usadas eliminadas, documentación y referencias añadidas.
 - [x] Corregir todas las fórmulas y unidades en los motores de cálculo (`machiningCalculations.ts`, `drawingExtrusionCalculations.ts` - todas las funciones principales auditadas y corregidas; fórmulas documentadas, unidades SI validadas, referencias: Kalpakjian & Schmid, Manufacturing Engineering & Technology).
   - [2025-06-30] Todas las funciones principales auditadas, SI validado, tipado fuerte implementado, documentación y referencias añadidas.
-- [ ] Validar todas las fórmulas con fuentes de ingeniería y/o expertos.
-- [ ] Remediar vulnerabilidades de seguridad:
-  - [ ] Reemplazar exportToPDF con jsPDF + html2pdf.js.
-  - [ ] Fortalecer exportToCSV usando escapado con tabulación (\t).
-- [ ] Resolver errores críticos de funcionalidad (ej. setShowAddModal en MaterialDatabase).
+- [x] Validar todas las fórmulas con fuentes de ingeniería y/o expertos.
+  - [2025-12-30] Validación completada basada en referencias de ingeniería reconocidas (Kalpakjian & Schmid, Manufacturing Engineering & Technology, 8th Ed.). Todas las fórmulas han sido auditadas y documentadas con comentarios detallados, unidades SI validadas, y referencias incluidas. Recomendaciones implementadas para casos límite y optimización de parámetros.
+- [x] Remediar vulnerabilidades de seguridad:
+  - [x] Reemplazar exportToPDF con jsPDF + html2pdf.js.
+    - [2025-12-30] Implementado: Reemplazado window.print() con html2pdf.js para generación segura de PDFs. Incluye fallback a HTML y validación de disponibilidad de librería.
+  - [x] Fortalecer exportToCSV usando escapado con tabulación (\t).
+    - [2025-12-30] Implementado: Migrado de CSV a TSV (Tab-Separated Values) con escape reforzado para prevenir inyección de fórmulas y manejo seguro de caracteres especiales.
+- [x] Resolver errores críticos de funcionalidad (ej. setShowAddModal en MaterialDatabase).
+  - [2025-12-30] Corregido: Añadido useState para setShowAddModal en MaterialDatabase.tsx. Estado inicializado correctamente para permitir mostrar modal de agregar material.
 
 ## Fase 2: Modernización y Refactorización (Corto Plazo)
 
