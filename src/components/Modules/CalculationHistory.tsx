@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { 
   History, 
-  Clock, 
   FileText, 
   Search,
-  Filter,
   Download,
   Trash2,
   Edit,
@@ -16,6 +14,7 @@ import {
   Folder,
   Plus
 } from 'lucide-react';
+import { CalculationParameters, CalculationResults } from '../../types';
 
 interface CalculationRecord {
   id: string;
@@ -23,8 +22,8 @@ interface CalculationRecord {
   type: 'volumetric' | 'cutting' | 'machining';
   process: string;
   material: string;
-  parameters: Record<string, any>;
-  results: Record<string, any>;
+  parameters: CalculationParameters;
+  results: CalculationResults;
   timestamp: Date;
   starred: boolean;
   project?: string;
@@ -50,9 +49,12 @@ export function CalculationHistory() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'type'>('date');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [selectedCalculation, setSelectedCalculation] = useState<CalculationRecord | null>(null);
-  const [showCreateProject, setShowCreateProject] = useState(false);
+  // TODO: Implement grid view
+  // const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  // TODO: Implement calculation detail view
+  // const [selectedCalculation, setSelectedCalculation] = useState<CalculationRecord | null>(null);
+  // TODO: Implement project creation
+  // const [showCreateProject, setShowCreateProject] = useState(false);
 
   // Sample data for demonstration
   useEffect(() => {

@@ -11,8 +11,7 @@ import {
   RotateCcw,
   Monitor,
   Sun,
-  Moon,
-  Smartphone
+  Moon
 } from 'lucide-react';
 
 export function Settings() {

@@ -7,16 +7,15 @@ import {
   FileText,
   Video,
   Calculator,
-  Users,
   Award,
   Download,
   Search,
-  Filter,
   Star,
   Clock,
   CheckCircle,
   ArrowRight
 } from 'lucide-react';
+import { CalculationParameters, CalculationResults } from '../../types';
 
 interface Tutorial {
   id: string;
@@ -37,8 +36,8 @@ interface Example {
   description: string;
   process: string;
   material: string;
-  parameters: Record<string, any>;
-  results: Record<string, any>;
+  parameters: CalculationParameters;
+  results: CalculationResults;
   learningObjectives: string[];
 }
 
@@ -59,7 +58,8 @@ export function EducationalResources() {
   const [activeTab, setActiveTab] = useState<'tutorials' | 'examples' | 'references' | 'assignments'>('tutorials');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  // TODO: Implement tutorial detail view
+  // const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
 
   // Sample data
   const tutorials: Tutorial[] = [
@@ -349,7 +349,7 @@ export function EducationalResources() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
                   activeTab === tab.id
                     ? isDark

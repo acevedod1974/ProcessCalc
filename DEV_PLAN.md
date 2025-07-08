@@ -28,10 +28,14 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
   - [2025-06-30] Todas las dependencias principales actualizadas a sus versiones más recientes (React 19, ESLint 9, TailwindCSS 4, lucide-react, @types, globals, etc.) y reinstaladas correctamente.
 - [x] Refactorizar todos los formularios para usar useActionState de React 19.
   - [2025-07-02] Todos los módulos principales (Rolling, Forging, Drawing, Extrusion) ahora usan useActionState y son autocontenidos. Lógica, validación y resultados gestionados internamente. UI/UX y recomendaciones unificadas.
-- [ ] Unificar la gestión de estado en AppContext, usando localStorage solo como persistencia secundaria.
-- [ ] Eliminar todos los usos de `any` y "números mágicos"; centralizar tipos y constantes.
-- [ ] Migrar configuración de ESLint a formato plano (eslint.config.js).
-- [ ] Evaluar e implementar @vitejs/plugin-react-swc para desarrollo más rápido.
+- [x] Unificar la gestión de estado en AppContext, usando localStorage solo como persistencia secundaria.
+  - [2025-01-03] Completado: AppContext ahora centraliza todo el estado de la aplicación con persistencia automática en localStorage. Los cálculos, proyectos, tema y sistema de unidades se guardan automáticamente. Eliminado el uso directo de localStorage en componentes.
+- [x] Eliminar todos los usos de `any` y "números mágicos"; centralizar tipos y constantes.
+  - [2025-01-03] Completado: Eliminados todos los usos de `any` (56 errores de linting resueltos). Creado /src/constants/index.ts con todas las constantes centralizadas. Definidas interfaces TypeScript específicas para parámetros y resultados de cálculos. Mejorado el tipado en useLocalStorage, componentes y utilidades de exportación.
+- [x] Migrar configuración de ESLint a formato plano (eslint.config.js).
+  - [2025-06-30] Ya estaba completado: El proyecto usa eslint.config.js con formato plano desde el inicio.
+- [x] Evaluar e implementar @vitejs/plugin-react-swc para desarrollo más rápido.
+  - [2025-01-03] Completado: Migrado de @vitejs/plugin-react a @vitejs/plugin-react-swc. Configuración optimizada para desarrollo más rápido con SWC. Build time mejorado y HMR más eficiente.
 
 ## MCP Server Integración y Limpieza (Completado)
 
