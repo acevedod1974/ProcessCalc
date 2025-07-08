@@ -74,11 +74,6 @@ export interface WireDrawingResults {
   recommendations: string[];
 }
 
-/**
- * Calculate wire drawing process parameters using metal forming theory
- * @param params - Wire drawing parameters including initial/final dimensions and process conditions
- * @returns Complete wire drawing analysis including stresses, forces, power, and die analysis
- */
 export function calculateWireDrawing(params: WireDrawingParameters): WireDrawingResults {
   const material = DRAWING_MATERIALS[params.material];
   if (!material) {
@@ -105,19 +100,18 @@ export function calculateWireDrawing(params: WireDrawingParameters): WireDrawing
     material.frictionCoefficient * 0.5 : 
     material.frictionCoefficient;
 
-  // Drawing stress calculation using: σ_d = σ_y × (1 + μ/tan(α/2)) × ln(A₀/A₁)
-  // where σ_y = yield strength, μ = friction coefficient, α = die angle, A = areas
+  // Drawing stress calculation
   const drawingStress = adjustedYieldStrength * 
     (1 + frictionFactor / Math.tan(angleRadians / 2)) * 
     Math.log(initialArea / finalArea);
 
-  // Drawing force: F = σ_d × A_final
+  // Drawing force
   const drawingForce = drawingStress * finalArea * 1000; // Convert to N
 
-  // Power calculation: P = F × v (kW)
+  // Power calculation
   const drawingPower = (drawingForce * params.drawingSpeed) / 60000; // kW
 
-  // Die stress: σ_die = σ_d × angle_factor
+  // Die stress
   const dieStress = drawingStress * angleFactor;
 
   // Work done
@@ -174,11 +168,6 @@ export interface ExtrusionResults {
   recommendations: string[];
 }
 
-/**
- * Calculate extrusion process parameters using metal forming principles
- * @param params - Extrusion parameters including billet geometry, die conditions, and process parameters
- * @returns Complete extrusion analysis including forces, pressure, power, and process optimization
- */
 export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResults {
   const material = DRAWING_MATERIALS[params.material];
   if (!material) {
@@ -253,17 +242,10 @@ export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResult
 }
 
 // Helper functions for recommendations
-interface DrawingCalculationResults {
-  reductionPerPass: number;
-  drawingStress: number;
-  dieStress: number;
-  efficiency: number;
-}
-
 function generateDrawingRecommendations(
   params: WireDrawingParameters,
   material: DrawingMaterialProperties,
-  results: DrawingCalculationResults
+  results: any
 ): string[] {
   const recommendations: string[] = [];
 
@@ -300,17 +282,10 @@ function generateDrawingRecommendations(
   return recommendations;
 }
 
-interface ExtrusionCalculationResults {
-  extrusionRatio: number;
-  extrusionPressure: number;
-  materialFlow: number;
-  efficiency: number;
-}
-
 function generateExtrusionRecommendations(
   params: ExtrusionParameters,
   material: DrawingMaterialProperties,
-  results: ExtrusionCalculationResults
+  results: any
 ): string[] {
   const recommendations: string[] = [];
 

@@ -106,11 +106,6 @@ export interface PunchingResults {
   recommendations: string[];
 }
 
-/**
- * Calculate punching/piercing process parameters using established formulas
- * @param params - Punching parameters including hole geometry, material, and process conditions
- * @returns Complete punching analysis including forces, energy, tool life, and quality assessment
- */
 export function calculatePunching(params: PunchingParameters): PunchingResults {
   const material = CUTTING_MATERIALS[params.material];
   if (!material) {
@@ -123,14 +118,13 @@ export function calculatePunching(params: PunchingParameters): PunchingResults {
 
   // Clearance calculations
   const clearanceValue = (params.clearance / 100) * params.thickness;
+  const actualClearance = clearanceValue * 2; // Total clearance (both sides)
 
-  // Punching force calculation using: F = τ × A_shear = τ × π × D × t
-  // where τ = shear strength, D = hole diameter, t = thickness
+  // Punching force calculation
   const shearArea = Math.PI * params.holeDiameter * params.thickness;
   const punchingForce = adjustedShearStrength * shearArea * 1000; // Convert to N
 
-  // Stripping force calculation: F_strip = F_punch × k_strip
-  // Stripping factor varies with thickness-to-diameter ratio
+  // Stripping force (typically 5-15% of punching force)
   const strippingFactor = 0.08 + (params.thickness / params.holeDiameter) * 0.02;
   const strippingForce = punchingForce * strippingFactor;
 
@@ -229,11 +223,6 @@ export interface ShearingResults {
   recommendations: string[];
 }
 
-/**
- * Calculate shearing process parameters using metal cutting mechanics
- * @param params - Shearing parameters including geometry, material, and cutting conditions
- * @returns Complete shearing analysis including forces, power, blade wear, and recommendations
- */
 export function calculateShearing(params: ShearingParameters): ShearingResults {
   const material = CUTTING_MATERIALS[params.material];
   if (!material) {
@@ -313,7 +302,7 @@ export function calculateShearing(params: ShearingParameters): ShearingResults {
 }
 
 // Clearance optimization function
-export function optimizeClearance(material: string, thickness: number) {
+export function optimizeClearance(material: string, thickness: number, holeDiameter: number) {
   const mat = CUTTING_MATERIALS[material];
   if (!mat) return null;
 

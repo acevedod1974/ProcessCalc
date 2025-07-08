@@ -1,6 +1,3 @@
-import jsPDF from 'jspdf';
-import html2pdf from 'html2pdf.js';
-
 // Export utilities for ProcessCalc
 
 export interface ExportCalculation {
@@ -62,38 +59,39 @@ export function exportToCSV(calculations: ExportCalculation[]): void {
   });
 
   const headers = Array.from(allKeys).sort();
-  const escapeTsv = (value: unknown) => {
+  const escapeCsv = (value: unknown) => {
     let str = String(value ?? "");
-    // Prevent formula injection - more strict for tabs
-    if (["=", "+", "-", "@", "\t"].includes(str[0])) {
+    // Prevent formula injection
+    if (["=", "+", "-", "@"].includes(str[0])) {
       str = "'" + str;
     }
-    // Escape tabs, newlines and carriage returns
-    str = str.replace(/\t/g, "\\t").replace(/\n/g, "\\n").replace(/\r/g, "\\r");
+    // Escape quotes
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      str = '"' + str.replace(/"/g, '""') + '"';
+    }
     return str;
   };
-  
-  const tsvContent = [
-    headers.join("\t"),
+  const csvContent = [
+    headers.join(","),
     ...calculations.map((calc) =>
       headers
         .map((header) => {
           if (header.startsWith("param_")) {
             const paramKey = header.replace("param_", "");
-            return escapeTsv(calc.parameters?.[paramKey]);
+            return escapeCsv(calc.parameters?.[paramKey]);
           } else if (header.startsWith("result_")) {
             const resultKey = header.replace("result_", "");
-            return escapeTsv(calc.results?.[resultKey]);
+            return escapeCsv(calc.results?.[resultKey]);
           } else {
-            return escapeTsv(calc[header as keyof ExportCalculation]);
+            return escapeCsv(calc[header as keyof ExportCalculation]);
           }
         })
-        .join("\t")
+        .join(",")
     ),
   ].join("\n");
 
-  const blob = new Blob([tsvContent], { type: "text/tab-separated-values" });
-  downloadFile(blob, `processcalc-calculations-${formatDate(new Date())}.tsv`);
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  downloadFile(blob, `processcalc-calculations-${formatDate(new Date())}.csv`);
 }
 
 function escapeHtml(str: string): string {
@@ -199,22 +197,17 @@ export function exportToPDF(
     </html>
   `;
 
-  // Use html2pdf.js to create a proper PDF
-  const element = document.createElement('div');
-  element.innerHTML = htmlContent;
-  document.body.appendChild(element);
-
-  const options = {
-    margin: 1,
-    filename: `processcalc-report-${formatDate(new Date())}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-  };
-
-  html2pdf().from(element).set(options).save().then(() => {
-    document.body.removeChild(element);
-  });
+  // Create a new window and print
+  const printWindow = window.open("", "_blank");
+  if (printWindow) {
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  }
 }
 
 export function importFromJSON(file: File): Promise<ExportData> {
