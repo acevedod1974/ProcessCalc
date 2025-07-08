@@ -242,10 +242,17 @@ export function calculateExtrusion(params: ExtrusionParameters): ExtrusionResult
 }
 
 // Helper functions for recommendations
+interface DrawingCalculationResults {
+  reductionPerPass: number;
+  drawingStress: number;
+  dieStress: number;
+  efficiency: number;
+}
+
 function generateDrawingRecommendations(
   params: WireDrawingParameters,
   material: DrawingMaterialProperties,
-  results: any
+  results: DrawingCalculationResults
 ): string[] {
   const recommendations: string[] = [];
 
@@ -282,10 +289,17 @@ function generateDrawingRecommendations(
   return recommendations;
 }
 
+interface ExtrusionCalculationResults {
+  extrusionRatio: number;
+  extrusionPressure: number;
+  materialFlow: number;
+  efficiency: number;
+}
+
 function generateExtrusionRecommendations(
   params: ExtrusionParameters,
   material: DrawingMaterialProperties,
-  results: any
+  results: ExtrusionCalculationResults
 ): string[] {
   const recommendations: string[] = [];
 

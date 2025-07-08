@@ -100,9 +100,10 @@ export function calculateRolling(params: RollingParameters): RollingResults {
   const reductionRatio = (reduction / params.initialThickness) * 100;
   const trueStrain = Math.log(params.initialThickness / params.finalThickness);
   
-  // Contact geometry
-  const contactLength = Math.sqrt(reduction * (params.rollDiameter / 2));
-  const contactAngle = Math.sqrt(reduction / (params.rollDiameter / 2));
+  // Contact geometry - corrected formulas
+  const rollRadius = params.rollDiameter / 2; // mm
+  const contactLength = Math.sqrt(rollRadius * reduction); // mm
+  const contactAngle = Math.sqrt(reduction / rollRadius); // radians
   
   // Flow stress calculation (simplified)
   const averageFlowStress = material.flowStressCoefficient * Math.pow(trueStrain, material.strainHardeningExponent);

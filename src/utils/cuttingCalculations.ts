@@ -118,7 +118,6 @@ export function calculatePunching(params: PunchingParameters): PunchingResults {
 
   // Clearance calculations
   const clearanceValue = (params.clearance / 100) * params.thickness;
-  const actualClearance = clearanceValue * 2; // Total clearance (both sides)
 
   // Punching force calculation
   const shearArea = Math.PI * params.holeDiameter * params.thickness;
@@ -302,7 +301,7 @@ export function calculateShearing(params: ShearingParameters): ShearingResults {
 }
 
 // Clearance optimization function
-export function optimizeClearance(material: string, thickness: number, holeDiameter: number) {
+export function optimizeClearance(material: string, thickness: number) {
   const mat = CUTTING_MATERIALS[material];
   if (!mat) return null;
 

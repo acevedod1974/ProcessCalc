@@ -153,8 +153,8 @@ export function calculateTurning(params: TurningParameters): TurningResults {
   // Power calculation
   const cuttingPower = (cuttingForce * params.cuttingSpeed) / 60000; // kW
 
-  // Machining time
-  const machiningTime = params.length / (params.feedRate * spindleSpeed);
+  // Machining time - corrected formula
+  const machiningTime = params.length / (params.feedRate * spindleSpeed / 60); // min
 
   // Surface roughness estimation
   const surfaceRoughness = (params.feedRate * params.feedRate) / (8 * 0.8); // μm (simplified)
@@ -405,10 +405,17 @@ function getBaseToolLife(toolMaterial: string): number {
   return baseLife[toolMaterial as keyof typeof baseLife] || 50;
 }
 
+interface TurningCalculationResults {
+  spindleSpeed: number;
+  toolLife: number;
+  surfaceRoughness: number;
+  cuttingPower: number;
+}
+
 function generateTurningRecommendations(
   params: TurningParameters, 
   material: MachiningMaterialProperties,
-  results: any
+  results: TurningCalculationResults
 ): string[] {
   const recommendations: string[] = [];
   
@@ -443,10 +450,18 @@ function generateTurningRecommendations(
   return recommendations;
 }
 
+interface MillingCalculationResults {
+  cuttingSpeed: number;
+  feedPerTooth: number;
+  toolLife: number;
+  surfaceRoughness: number;
+  cuttingPower: number;
+}
+
 function generateMillingRecommendations(
   params: MillingParameters, 
   material: MachiningMaterialProperties,
-  results: any
+  results: MillingCalculationResults
 ): string[] {
   const recommendations: string[] = [];
   
@@ -479,10 +494,17 @@ function generateMillingRecommendations(
   return recommendations;
 }
 
+interface DrillingCalculationResults {
+  spindleSpeed: number;
+  penetrationRate: number;
+  torque: number;
+  power: number;
+}
+
 function generateDrillingRecommendations(
   params: DrillingParameters, 
   material: MachiningMaterialProperties,
-  results: any
+  results: DrillingCalculationResults
 ): string[] {
   const recommendations: string[] = [];
   
