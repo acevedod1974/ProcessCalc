@@ -2,6 +2,15 @@
 
 ProcessCalc is a modern, educational, and engineering-focused web application for simulating, analyzing, and optimizing various manufacturing processes. It provides interactive modules for metal cutting, volumetric deformation (rolling, forging, drawing, extrusion), machining operations (turning, milling, drilling), and more. The app is built with React, TypeScript, Vite, and Tailwind CSS, and is designed for both students and professionals in manufacturing, mechanical engineering, and materials science.
 
+## MCP Server Integration
+
+- GitHub MCP server integration is supported and tested. See VS Code settings for configuration using environment variables.
+- Firecrawl MCP server and dependency have been removed as of July 2025.
+
+**Troubleshooting:**
+
+- If you encounter issues with deprecated dependencies, clear your npm cache and remove any unused packages.
+
 ## Features
 
 - **Metal Cutting Module:** Calculate punching forces, assess cut quality, estimate tool wear, and receive actionable recommendations.

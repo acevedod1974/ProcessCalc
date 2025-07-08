@@ -8,7 +8,7 @@ interface RecommendationCardProps {
 }
 
 export const RecommendationCard = React.memo(function RecommendationCard({
-  recommendations,
+  recommendations = [],
   type = "info",
 }: RecommendationCardProps) {
   const { state } = useApp();

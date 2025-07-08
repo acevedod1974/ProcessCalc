@@ -9,6 +9,7 @@ This file tracks outstanding tasks, bugs, and feature requests for the ProcessCa
 - [ ] Improve error handling and user feedback for calculation errors
 - [ ] Expand the educational resources module with more process explanations and diagrams
 - [ ] Add unit tests for calculation functions in `src/utils/`
+- [x] Remove Firecrawl MCP server and dependency from project, settings, and package.json
 
 ## Medium Priority
 
@@ -29,6 +30,13 @@ This file tracks outstanding tasks, bugs, and feature requests for the ProcessCa
 
 - [ ] Occasional UI flicker when switching modules (investigate context updates)
 - [ ] Some tooltips overlap on small screens
+
+---
+
+## MCP Integration
+
+- [x] Remove Firecrawl MCP server and dependency (July 2025)
+- [ ] Verify GitHub MCP server integration and document any issues
 
 ---
 
