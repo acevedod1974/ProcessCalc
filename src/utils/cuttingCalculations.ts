@@ -107,6 +107,9 @@ export interface PunchingResults {
 }
 
 export function calculatePunching(params: PunchingParameters): PunchingResults {
+  if (params.thickness < 0.5) {
+    throw new Error("Thickness too small for reliable punching");
+  }
   const material = CUTTING_MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");

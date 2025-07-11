@@ -135,6 +135,9 @@ export interface TurningResults {
 }
 
 export function calculateTurning(params: TurningParameters): TurningResults {
+  if (params.diameter <= 0) {
+    throw new Error("Diameter must be greater than zero");
+  }
   const material = MACHINING_MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");

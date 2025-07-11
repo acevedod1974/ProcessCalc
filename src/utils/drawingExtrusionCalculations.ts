@@ -77,6 +77,9 @@ export interface WireDrawingResults {
 export function calculateWireDrawing(
   params: WireDrawingParameters
 ): WireDrawingResults {
+  if (params.finalDiameter >= params.initialDiameter) {
+    throw new Error("Final diameter must be less than initial diameter");
+  }
   const material = DRAWING_MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");
