@@ -135,6 +135,10 @@ export interface TurningResults {
 }
 
 export function calculateTurning(params: TurningParameters): TurningResults {
+  const validToolMaterials = ["hss", "carbide", "ceramic", "diamond"];
+  if (!validToolMaterials.includes(params.toolMaterial)) {
+    throw new Error("Invalid tool material");
+  }
   if (params.diameter <= 0) {
     throw new Error("Diameter must be greater than zero");
   }
