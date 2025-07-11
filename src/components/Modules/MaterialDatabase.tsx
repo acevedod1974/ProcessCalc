@@ -57,7 +57,8 @@ export function MaterialDatabase() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedMaterial, setSelectedMaterial] =
     useState<MaterialEntry | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // TODO: Implement add material modal
+  // const [showAddModal, setShowAddModal] = useState(false);
 
   // Combine all materials into a unified database using useMemo for performance
   const materials = useMemo(() => {

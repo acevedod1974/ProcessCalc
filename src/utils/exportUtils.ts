@@ -1,5 +1,22 @@
 // Export utilities for ProcessCalc
 
+// Define html2pdf interface for type safety
+interface Html2Pdf {
+  (): {
+    set: (options: unknown) => {
+      from: (element: HTMLElement) => {
+        save: () => Promise<void>;
+      };
+    };
+  };
+}
+
+declare global {
+  interface Window {
+    html2pdf?: Html2Pdf;
+  }
+}
+
 export interface ExportCalculation {
   id: string;
   name: string;
@@ -191,7 +208,7 @@ export function exportToPDF(
   `;
 
   // Use html2pdf.js for secure PDF generation
-  if (typeof window !== 'undefined' && (window as any).html2pdf) {
+  if (typeof window !== 'undefined' && window.html2pdf) {
     // Create a temporary element with the content
     const element = document.createElement('div');
     element.innerHTML = htmlContent;
@@ -207,7 +224,7 @@ export function exportToPDF(
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    (window as any).html2pdf().set(opt).from(element).save().then(() => {
+    window.html2pdf().set(opt).from(element).save().then(() => {
       document.body.removeChild(element);
     });
   } else {

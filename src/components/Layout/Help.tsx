@@ -25,7 +25,7 @@ interface HelpTopic {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   articles: Array<{
     title: string;
     description: string;
