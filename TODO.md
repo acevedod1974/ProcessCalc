@@ -4,11 +4,11 @@ This file tracks outstanding tasks, bugs, and feature requests for the ProcessCa
 
 ## High Priority
 
-- [ ] Complete and test the `handleExtrusionCalculation` logic in `VolumetricDeformation.tsx`
-- [ ] Add missing input validation for all modules (double-check edge cases)
-- [ ] Improve error handling and user feedback for calculation errors
+- [ ] Complete and test the `handleExtrusionCalculation` logic in `VolumetricDeformation.tsx` (ver también integración completa de lógica auditada en DEV_PLAN.md)
+- [ ] Add missing input validation for all modules (double-check edge cases). NOTA: La validación y feedback de errores aún están incompletos en varios módulos. Ver DEV_PLAN.md para detalles y prioridades.
+- [ ] Improve error handling and user feedback for calculation errors (ver también sección de validación y manejo de errores en DEV_PLAN.md)
 - [ ] Expand the educational resources module with more process explanations and diagrams
-- [ ] Add unit tests for calculation functions in `src/utils/`
+- [ ] Add unit tests for calculation functions in `src/utils/`. NOTA: Es un requisito crítico pendiente, ver DEV_PLAN.md y PRD.md.
 - [x] Remove Firecrawl MCP server and dependency from project, settings, and package.json
 
 ## Medium Priority
@@ -40,4 +40,4 @@ This file tracks outstanding tasks, bugs, and feature requests for the ProcessCa
 
 ---
 
-For roadmap and broader planning, see `PLANNING.md`.
+Para visión, principios y roadmap general, ver `VISION_ROADMAP.md`. Para planificación técnica y prioridades, ver `DEV_PLAN.md`.

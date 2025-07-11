@@ -51,12 +51,13 @@ ProcessCalc is a modern, modular web application for performing, documenting, an
 - All formulas and units must be SI-compliant and referenced (e.g., Kalpakjian & Schmid).
 - Strong TypeScript typing; no use of any.
 - Centralized types and constants; no magic numbers.
+  NOTA [2025-07-11]: La validación de entradas y el manejo de errores aún están incompletos en varios módulos. Priorizar la implementación de validaciones exhaustivas y feedback de errores amigable para el usuario.
 
 ### 4.3 State Management
 
 - AppContext provides global state (theme, units, materials, etc.).
 - LocalStorage is used only for secondary persistence.
-- All forms use React 19’s useActionState for robust state handling.
+- NOTA [2025-07-11]: La migración a useActionState está incompleta. Algunos formularios aún usan useState/startTransition. Se requiere migración completa o actualizar la documentación para reflejar el patrón real.
 
 ### 4.4 UI/UX
 
@@ -85,6 +86,12 @@ ProcessCalc is a modern, modular web application for performing, documenting, an
 - All formulas, units, and references are documented in code and UI.
 - Code is fully commented and follows best practices.
 - PRD, dev plan, and code documentation are kept up to date.
+- NOTA [2025-07-11]: Se recomienda establecer un proceso de auditoría regular para cruzar PRD.md, DEV_PLAN.md y TODO.md con la base de código real y mantener la documentación sincronizada.
+
+### 4.9 Testing & Reliability
+
+- Implementar pruebas unitarias exhaustivas para todas las funciones de cálculo en src/utils/. Este es un requisito crítico pendiente para garantizar la precisión y robustez a largo plazo.
+- Integrar completamente la lógica de cálculo auditada (ej. Extrusión) en los módulos de UI correspondientes. Auditar todos los módulos para detectar discrepancias similares.
 
 ---
 
@@ -101,7 +108,8 @@ ProcessCalc is a modern, modular web application for performing, documenting, an
 - All core modules pass validation with engineering references.
 - No critical bugs or calculation errors in production.
 - User feedback indicates high trust in results and usability.
-- Codebase passes linting, type checks, and automated tests.
+- Codebase passes linting, type checks, y pruebas automatizadas.
+- Pruebas unitarias implementadas y ejecutadas para todos los motores de cálculo.
 
 ---
 

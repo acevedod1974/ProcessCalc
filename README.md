@@ -1,5 +1,7 @@
 # ProcessCalc
 
+> **Nota:** La visión, principios y roadmap general del proyecto están en `VISION_ROADMAP.md`.
+
 ProcessCalc is a modern, educational, and engineering-focused web application for simulating, analyzing, and optimizing various manufacturing processes. It provides interactive modules for metal cutting, volumetric deformation (rolling, forging, drawing, extrusion), machining operations (turning, milling, drilling), and more. The app is built with React, TypeScript, Vite, and Tailwind CSS, and is designed for both students and professionals in manufacturing, mechanical engineering, and materials science.
 
 ## MCP Server Integration
@@ -64,7 +66,7 @@ ProcessCalc is a modern, educational, and engineering-focused web application fo
 
 ## Contributing
 
-Contributions are welcome! Please see `TODO.md` and `PLANNING.md` for current tasks and roadmap.
+Contributions are welcome! Please see `TODO.md` y `VISION_ROADMAP.md` para tareas actuales y roadmap.
 
 ## License
 

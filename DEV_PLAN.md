@@ -1,5 +1,7 @@
 # ProcessCalc DEV Branch Refactoring, Auditoría y Modernización
 
+> **Nota:** La visión, principios y roadmap general del proyecto están ahora en `VISION_ROADMAP.md`. Este archivo se centra en el plan técnico y de desarrollo.
+
 Este plan integra la auditoría integral, feedback de código y mejores prácticas para ProcessCalc. Trabaja cada sección en orden, marcando los ítems completados. Actualiza este archivo conforme avances.
 
 ---
@@ -26,10 +28,13 @@ Este plan integra la auditoría integral, feedback de código y mejores práctic
 
 - [x] Actualizar dependencias clave (React 19, ESLint 9, Vite, etc.).
   - [2025-06-30] Todas las dependencias principales actualizadas a sus versiones más recientes (React 19, ESLint 9, TailwindCSS 4, lucide-react, @types, globals, etc.) y reinstaladas correctamente.
-- [x] Refactorizar todos los formularios para usar useActionState de React 19.
-  - [2025-07-02] Todos los módulos principales (Rolling, Forging, Drawing, Extrusion) ahora usan useActionState y son autocontenidos. Lógica, validación y resultados gestionados internamente. UI/UX y recomendaciones unificadas.
+- [ ] Refactorizar todos los formularios para usar useActionState de React 19.
+  - [2025-07-11] NOTA: La migración a useActionState está incompleta. Algunos módulos aún usan useState/startTransition para la gestión de formularios. Se requiere una auditoría y migración completa, o actualizar la documentación para reflejar el patrón real.
 - [x] Unificar la gestión de estado en AppContext, usando localStorage solo como persistencia secundaria.
   - [2025-01-03] Completado: AppContext ahora centraliza todo el estado de la aplicación con persistencia automática en localStorage. Los cálculos, proyectos, tema y sistema de unidades se guardan automáticamente. Eliminado el uso directo de localStorage en componentes.
+  - [2025-07-11] NOTA: La validación de entradas y el manejo de errores aún están incompletos en varios módulos. Priorizar la implementación de validaciones exhaustivas y feedback de errores amigable para el usuario.
+- [ ] Implementar pruebas unitarias exhaustivas para todas las funciones de cálculo en src/utils/. Este es un requisito crítico pendiente para garantizar la precisión y robustez a largo plazo.
+- [ ] Integrar completamente la lógica de cálculo auditada (ej. Extrusión) en los módulos de UI correspondientes. Auditar todos los módulos para detectar discrepancias similares.
 - [x] Eliminar todos los usos de `any` y "números mágicos"; centralizar tipos y constantes.
   - [2025-01-03] Completado: Eliminados todos los usos de `any` (56 errores de linting resueltos). Creado /src/constants/index.ts con todas las constantes centralizadas. Definidas interfaces TypeScript específicas para parámetros y resultados de cálculos. Mejorado el tipado en useLocalStorage, componentes y utilidades de exportación.
 - [x] Migrar configuración de ESLint a formato plano (eslint.config.js).
@@ -53,6 +58,8 @@ El proyecto está listo para QA final y pruebas de integración MCP.
 - [ ] Establecer CI/CD y pruebas automatizadas.
 
 ## Mejoras de Código y Accesibilidad (Continuas)
+
+- [ ] Establecer un proceso de auditoría regular para cruzar DEV_PLAN.md, PRD.md y TODO.md con la base de código real. Documentar hallazgos y mantener la documentación sincronizada con el estado del código.
 
 - [ ] Implementar un global error boundary en React.
 - [ ] Añadir anotaciones de tipo y eliminar `any`.
