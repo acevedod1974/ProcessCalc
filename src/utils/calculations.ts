@@ -90,9 +90,29 @@ export interface RollingResults {
 }
 
 export function calculateRolling(params: RollingParameters): RollingResults {
+
   const material = MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");
+  }
+  if (
+    params.initialThickness <= params.finalThickness ||
+    params.initialThickness <= 0 ||
+    params.finalThickness <= 0
+  ) {
+    throw new Error("Initial thickness must be greater than final thickness and both > 0");
+  }
+  if (params.width <= 0) {
+    throw new Error("Width must be greater than 0");
+  }
+  if (params.rollDiameter <= 0) {
+    throw new Error("Roll diameter must be greater than 0");
+  }
+  if (params.rollingSpeed <= 0) {
+    throw new Error("Rolling speed must be greater than 0");
+  }
+  if (params.frictionCoefficient < 0) {
+    throw new Error("Friction coefficient cannot be negative");
   }
 
   // --- FORMULA AUDIT & UNIT CONSISTENCY ---
@@ -195,9 +215,23 @@ export interface ForgingResults {
 }
 
 export function calculateForging(params: ForgingParameters): ForgingResults {
+
   const material = MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");
+  }
+  if (
+    params.initialHeight <= params.finalHeight ||
+    params.initialHeight <= 0 ||
+    params.finalHeight <= 0
+  ) {
+    throw new Error("Initial height must be greater than final height and both > 0");
+  }
+  if (params.diameter <= 0) {
+    throw new Error("Diameter must be greater than 0");
+  }
+  if (params.frictionCoefficient < 0) {
+    throw new Error("Friction coefficient cannot be negative");
   }
 
   const reduction = params.initialHeight - params.finalHeight;
@@ -250,7 +284,9 @@ export function convertLength(value: number, from: string, to: string): number {
     in: 25.4,
     ft: 304.8,
   };
-
+  if (!(from in conversions) || !(to in conversions)) {
+    throw new Error("Invalid length unit");
+  }
   return (value * conversions[from]) / conversions[to];
 }
 
@@ -262,7 +298,9 @@ export function convertForce(value: number, from: string, to: string): number {
     lbf: 4.448,
     kip: 4448,
   };
-
+  if (!(from in conversions) || !(to in conversions)) {
+    throw new Error("Invalid force unit");
+  }
   return (value * conversions[from]) / conversions[to];
 }
 
@@ -273,6 +311,8 @@ export function convertPower(value: number, from: string, to: string): number {
     MW: 1000000,
     hp: 745.7,
   };
-
+  if (!(from in conversions) || !(to in conversions)) {
+    throw new Error("Invalid power unit");
+  }
   return (value * conversions[from]) / conversions[to];
 }
