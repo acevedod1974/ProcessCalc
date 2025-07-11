@@ -90,7 +90,6 @@ export interface RollingResults {
 }
 
 export function calculateRolling(params: RollingParameters): RollingResults {
-
   const material = MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");
@@ -100,7 +99,9 @@ export function calculateRolling(params: RollingParameters): RollingResults {
     params.initialThickness <= 0 ||
     params.finalThickness <= 0
   ) {
-    throw new Error("Initial thickness must be greater than final thickness and both > 0");
+    throw new Error(
+      "Initial thickness must be greater than final thickness and both > 0"
+    );
   }
   if (params.width <= 0) {
     throw new Error("Width must be greater than 0");
@@ -215,7 +216,6 @@ export interface ForgingResults {
 }
 
 export function calculateForging(params: ForgingParameters): ForgingResults {
-
   const material = MATERIALS[params.material];
   if (!material) {
     throw new Error("Material not found");
@@ -225,7 +225,9 @@ export function calculateForging(params: ForgingParameters): ForgingResults {
     params.initialHeight <= 0 ||
     params.finalHeight <= 0
   ) {
-    throw new Error("Initial height must be greater than final height and both > 0");
+    throw new Error(
+      "Initial height must be greater than final height and both > 0"
+    );
   }
   if (params.diameter <= 0) {
     throw new Error("Diameter must be greater than 0");
