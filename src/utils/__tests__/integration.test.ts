@@ -108,6 +108,7 @@ describe("ProcessCalc integration: rolling → punching → machining → wire d
   });
 
   it("should throw for invalid toolMaterial in machining", () => {
+    // Use an explicit type for toolMaterial to avoid 'any'.
     expect(() =>
       calculateTurning({
         material: "steel-mild",
@@ -116,7 +117,7 @@ describe("ProcessCalc integration: rolling → punching → machining → wire d
         cuttingSpeed: 100,
         feedRate: 0.2,
         depthOfCut: 2,
-        toolMaterial: "invalid" as any,
+        toolMaterial: "invalid" as unknown as "hss" | "carbide" | "ceramic",
         coolant: true,
       })
     ).toThrow();
@@ -256,7 +257,7 @@ describe("ProcessCalc integration: rolling → punching → machining → wire d
 
   it("should propagate recommendations and quality indicators", () => {
     // Step 1: Rolling
-    const rollingResult = calculateRolling({
+    calculateRolling({
       material: "steel-low-carbon",
       initialThickness: 20,
       finalThickness: 10,
