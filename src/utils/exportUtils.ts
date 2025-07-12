@@ -76,23 +76,23 @@ export function exportToCSV(calculations: ExportCalculation[]): void {
   });
 
   const headers = Array.from(allKeys).sort();
-  
+
   // Strengthened escape function using tab separation and enhanced security
   const escapeTsv = (value: unknown) => {
     let str = String(value ?? "");
-    
+
     // Prevent formula injection attacks
     if (["=", "+", "-", "@", "\t", "\r", "\n"].includes(str[0])) {
       str = "'" + str;
     }
-    
+
     // Escape tabs, newlines, and carriage returns for TSV format
     str = str
-      .replace(/\t/g, "\\t")  // Replace actual tabs with escaped tabs
-      .replace(/\r/g, "\\r")  // Replace carriage returns
-      .replace(/\n/g, "\\n")  // Replace newlines
+      .replace(/\t/g, "\\t") // Replace actual tabs with escaped tabs
+      .replace(/\r/g, "\\r") // Replace carriage returns
+      .replace(/\n/g, "\\n") // Replace newlines
       .replace(/\\/g, "\\\\"); // Escape backslashes
-    
+
     return str;
   };
 
@@ -138,17 +138,25 @@ export function exportToPDF(
     <div style="font-family: Arial, sans-serif; margin: 20px; max-width: 800px;">
       <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color: #333;">ProcessCalc Report</h1>
-        <p style="color: #666;">Generated on: ${escapeHtml(new Date().toLocaleString())}</p>
+        <p style="color: #666;">Generated on: ${escapeHtml(
+          new Date().toLocaleString()
+        )}</p>
       </div>
       
       <div style="margin-bottom: 30px;">
-        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 5px;">Projects (${projects.length})</h2>
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 5px;">Projects (${
+          projects.length
+        })</h2>
         ${projects
           .map(
             (project) => `
           <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px;">
-            <h3 style="color: #666; margin-top: 0;">${escapeHtml(project.name)}</h3>
-            <p style="margin: 5px 0;">${escapeHtml(project.description || "")}</p>
+            <h3 style="color: #666; margin-top: 0;">${escapeHtml(
+              project.name
+            )}</h3>
+            <p style="margin: 5px 0;">${escapeHtml(
+              project.description || ""
+            )}</p>
             <p style="margin: 5px 0;"><strong>Created:</strong> ${escapeHtml(
               new Date(project.createdAt).toLocaleDateString()
             )}</p>
@@ -162,14 +170,22 @@ export function exportToPDF(
       </div>
       
       <div style="margin-bottom: 30px;">
-        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 5px;">Calculations (${calculations.length})</h2>
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 5px;">Calculations (${
+          calculations.length
+        })</h2>
         ${calculations
           .map(
             (calc) => `
           <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; page-break-inside: avoid;">
-            <h3 style="color: #666; margin-top: 0;">${escapeHtml(calc.name)}</h3>
-            <p style="margin: 5px 0;"><strong>Type:</strong> ${escapeHtml(calc.type)}</p>
-            <p style="margin: 5px 0;"><strong>Material:</strong> ${escapeHtml(calc.material)}</p>
+            <h3 style="color: #666; margin-top: 0;">${escapeHtml(
+              calc.name
+            )}</h3>
+            <p style="margin: 5px 0;"><strong>Type:</strong> ${escapeHtml(
+              calc.type
+            )}</p>
+            <p style="margin: 5px 0;"><strong>Material:</strong> ${escapeHtml(
+              calc.material
+            )}</p>
             <p style="margin: 5px 0;"><strong>Date:</strong> ${escapeHtml(
               new Date(calc.timestamp).toLocaleDateString()
             )}</p>
@@ -179,7 +195,9 @@ export function exportToPDF(
               ${Object.entries(calc.parameters || {})
                 .map(
                   ([key, value]) => `
-                <tr><td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">${escapeHtml(key)}</td><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(
+                <tr><td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">${escapeHtml(
+                  key
+                )}</td><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(
                     String(value)
                   )}</td></tr>
               `
@@ -192,7 +210,9 @@ export function exportToPDF(
               ${Object.entries(calc.results || {})
                 .map(
                   ([key, value]) => `
-                <tr><td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">${escapeHtml(key)}</td><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(
+                <tr><td style="border: 1px solid #ddd; padding: 8px; background-color: #f9f9f9;">${escapeHtml(
+                  key
+                )}</td><td style="border: 1px solid #ddd; padding: 8px;">${escapeHtml(
                     String(value)
                   )}</td></tr>
               `
@@ -208,32 +228,44 @@ export function exportToPDF(
   `;
 
   // Use html2pdf.js for secure PDF generation
-  if (typeof window !== 'undefined' && window.html2pdf) {
+  if (typeof window !== "undefined" && window.html2pdf) {
     // Create a temporary element with the content
-    const element = document.createElement('div');
+    const element = document.createElement("div");
     element.innerHTML = htmlContent;
-    element.style.position = 'absolute';
-    element.style.left = '-9999px';
+    element.style.position = "absolute";
+    element.style.left = "-9999px";
     document.body.appendChild(element);
 
     const opt = {
       margin: 1,
       filename: `processcalc-report-${formatDate(new Date())}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
     };
 
-    window.html2pdf().set(opt).from(element).save().then(() => {
-      document.body.removeChild(element);
-    });
+    window
+      .html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
+        document.body.removeChild(element);
+      });
   } else {
     // Fallback: download as HTML file if html2pdf.js is not available
-    const blob = new Blob([`<!DOCTYPE html><html><head><title>ProcessCalc Report</title></head><body>${htmlContent}</body></html>`], { 
-      type: 'text/html' 
-    });
+    const blob = new Blob(
+      [
+        `<!DOCTYPE html><html><head><title>ProcessCalc Report</title></head><body>${htmlContent}</body></html>`,
+      ],
+      {
+        type: "text/html",
+      }
+    );
     downloadFile(blob, `processcalc-report-${formatDate(new Date())}.html`);
-    console.warn('html2pdf.js not available. Report exported as HTML file instead.');
+    console.warn(
+      "html2pdf.js not available. Report exported as HTML file instead."
+    );
   }
 }
 
@@ -274,7 +306,9 @@ export function convertUnits(
   fromUnit: string,
   toUnit: string
 ): number {
-  const conversions: Record<string, Record<string, number>> = {
+  type UnitMap = Record<string, number>;
+  type TempMap = Record<string, (val: number, to: string) => number>;
+  const conversions: { [key: string]: UnitMap | TempMap } = {
     length: {
       mm: 1,
       cm: 10,
@@ -324,13 +358,15 @@ export function convertUnits(
   // Find the unit category
   for (const [category, units] of Object.entries(conversions)) {
     if (category === "temperature") {
-      const converter = units[fromUnit];
+      const tempUnits = units as TempMap;
+      const converter = tempUnits[fromUnit];
       if (typeof converter === "function") {
         return converter(value, toUnit);
       }
     } else {
-      if (units[fromUnit] && units[toUnit]) {
-        return (value * units[fromUnit]) / units[toUnit];
+      const unitMap = units as UnitMap;
+      if (unitMap[fromUnit] && unitMap[toUnit]) {
+        return (value * unitMap[fromUnit]) / unitMap[toUnit];
       }
     }
   }
