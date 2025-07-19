@@ -3,6 +3,8 @@ import React, { useState, startTransition } from "react";
 import { useApp } from "../../contexts/AppContext";
 // Removed unused UI imports after modularization
 import { RollingModule } from "./RollingModule";
+import { saveCalculation } from "../../utils/api";
+import type { Calculation } from "../../types";
 import { ForgingModule } from "./ForgingModule";
 import { DrawingModule } from "./DrawingModule";
 import { ExtrusionModule } from "./ExtrusionModule";
@@ -45,6 +47,12 @@ export function VolumetricDeformation() {
   // State management
   const [activeProcess, setActiveProcess] =
     useState<DeformationProcess>("rolling");
+
+  // Handler to save calculation only
+  const handleSaveCalculation = async (calculation: Calculation) => {
+    await saveCalculation(calculation);
+    // Optionally: show a toast or notification here
+  };
 
   // ...existing code...
   // All rolling, forging, and drawing state/action logic has been removed from this file.
@@ -186,6 +194,7 @@ export function VolumetricDeformation() {
           isDark={isDark}
           formingMaterialOptions={formingMaterialOptions}
           startTransition={startTransition}
+          onSaveCalculation={handleSaveCalculation}
         />
       )}
 

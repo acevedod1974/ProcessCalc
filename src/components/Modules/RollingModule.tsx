@@ -10,16 +10,20 @@ import {
 
 import { AppState } from "../../contexts/AppContext";
 
+import type { Calculation } from "../../types";
+
 interface RollingModuleProps {
   state: AppState;
   isDark: boolean;
   formingMaterialOptions: { value: string; label: string }[];
+  onSaveCalculation?: (calculation: Calculation) => void;
 }
 
 export function RollingModule({
   state,
   isDark,
   formingMaterialOptions,
+  onSaveCalculation,
 }: RollingModuleProps) {
   const [fields, setFields] = useState<Partial<RollingParameters>>({
     material: "",
@@ -91,6 +95,23 @@ export function RollingModule({
           results,
           isCalculating: false,
         });
+        // Call onSaveCalculation with real data if provided
+        if (onSaveCalculation) {
+          const calculation: Calculation = {
+            id: crypto.randomUUID
+              ? crypto.randomUUID()
+              : Math.random().toString(36).slice(2),
+            type: "volumetric",
+            process: "rolling",
+            name: "Rolling Calculation",
+            parameters: params,
+            results,
+            timestamp: new Date(),
+            userId: state.user?.id || "anonymous",
+            notes: "Saved from RollingModule",
+          };
+          onSaveCalculation(calculation);
+        }
       } catch (error) {
         const errMsg =
           error instanceof Error
