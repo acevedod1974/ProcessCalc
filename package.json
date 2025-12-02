@@ -14,7 +14,7 @@
     "@azure/cosmos": "^4.4.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
-    "express": "^5.1.0",
+    "express": "^5.2.0",
     "html2pdf.js": "^0.10.3",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.525.0",
